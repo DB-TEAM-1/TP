@@ -5,7 +5,7 @@ class UserQueries:
     @staticmethod
     def create_user(username, password, name, region=None, email=None):
         query = """
-            INSERT INTO "User" (username, password, name, region, email, is_active, date_joined)
+            INSERT INTO "Users" (username, password, name, region, email, is_active, date_joined)
             VALUES (%s, %s, %s, %s, %s, true, CURRENT_TIMESTAMP)
             RETURNING user_num;
         """
@@ -17,7 +17,7 @@ class UserQueries:
     def get_user_by_username(username):
         query = """
             SELECT user_num, username, password, name, region, email, is_active
-            FROM "User"
+            FROM "Users"
             WHERE username = %s;
         """
         with connection.cursor() as cursor:
@@ -52,7 +52,7 @@ class UserQueries:
             return False
             
         query = f"""
-            UPDATE "User"
+            UPDATE "Users"
             SET {', '.join(updates)}
             WHERE user_num = %s
             RETURNING user_num;
@@ -66,7 +66,7 @@ class UserQueries:
     @staticmethod
     def delete_user(user_num):
         query = """
-            DELETE FROM "User"
+            DELETE FROM "Users"
             WHERE user_num = %s
             RETURNING user_num;
         """
