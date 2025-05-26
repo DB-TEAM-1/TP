@@ -1,64 +1,93 @@
-from django.shortcuts import render
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib import messages
-from .models import Animal
-from .models import Shelter
-from .forms import CustomUserCreationForm
 from django.shortcuts import render, redirect
-
+from django.http import JsonResponse
+from django.contrib.auth import login, logout
+from django.contrib import messages
+from sql.queries.animal_queries import AnimalQueries
+from sql.queries.shelter_queries import ShelterQueries
+from sql.queries.adoption_queries import AdoptionQueries
+from sql.queries.review_queries import ReviewQueries
+from sql.queries.report_queries import ReportQueries
+from sql.queries.user_queries import UserQueries
 
 def home(request):
     return render(request, 'core/home.html')
 
-def animals(request):
-    animals = Animal.objects.all().order_by('-happenDt')[:30]  # 최근 30건 출력
-    return render(request, 'core/animals.html', {'animals': animals})
+def search_animals(request):
+    animals = AnimalQueries.search_animals(
+        upKindCd=request.GET.get('upKindCd'),
+        sexCd=request.GET.get('sexCd'),
+        age=request.GET.get('age'),
+        happenPlace=request.GET.get('happenPlace'),
+        processState=request.GET.get('processState')
+    )
+    return JsonResponse({'animals': animals})
 
-def shelters(request):
-    shelters = Shelter.objects.all().order_by('careNm')
-    return render(request, 'core/shelters.html', {'shelters': shelters})
+def animal_detail(request, desertionNo):
+    animal = AnimalQueries.get_animal_detail(desertionNo)
+    shelter = AnimalQueries.get_shelter_by_animal(desertionNo)
+    return render(request, 'core/animal_detail.html', {
+        'animal': animal,
+        'shelter': shelter
+    })
 
-def reports(request):
-    return render(request, 'core/reports.html')
+def shelter_list(request):
+    shelters = ShelterQueries.search_shelters(
+        region=request.GET.get('region')
+    )
+    return JsonResponse({'shelters': shelters})
 
-def adoptions(request):
-    return render(request, 'core/adoptions.html')
+def adoption_list(request):
+    if not request.session.get('user_num'):
+        return redirect('login')
+    adoptions = AdoptionQueries.get_user_adoptions(request.session['user_num'])
+    return render(request, 'core/adoption_list.html', {
+        'adoptions': adoptions
+    })
 
-def reviews(request):
-    return render(request, 'core/reviews.html')
+def review_list(request, careRegNo):
+    reviews = ReviewQueries.get_shelter_reviews(careRegNo)
+    return render(request, 'core/review_list.html', {
+        'reviews': reviews
+    })
 
-from django.shortcuts import render, redirect
-from .forms import CustomUserCreationForm
+def report_list(request):
+    if not request.session.get('user_num'):
+        return redirect('login')
+    reports = ReportQueries.get_user_reports(request.session['user_num'])
+    return render(request, 'core/report_list.html', {
+        'reports': reports
+    })
 
 def signup(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.name = form.cleaned_data['name']
-            user.email = form.cleaned_data['email']
-            user.region = form.cleaned_data['region']
-            user.save()
-            return redirect('login')  # 'login' URL name이 있어야 함
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'core/signup.html', {'form': form})
+        try:
+            user_num = UserQueries.create_user(
+                username=request.POST['username'],
+                password=request.POST['password'],
+                name=request.POST['name'],
+                email=request.POST.get('email'),
+                region=request.POST.get('region')
+            )
+            return redirect('login')
+        except Exception as e:
+            messages.error(request, str(e))
+    return render(request, 'core/signup.html')
 
-    
 def login_view(request):
     if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
+        username = request.POST['username']
+        password = request.POST['password']
+        user = UserQueries.get_user_by_username(username)
+        
+        if user and UserQueries.check_password(password, user['password']):
+            request.session['user_num'] = user['user_num']
+            request.session['username'] = user['username']
             return redirect('home')
         else:
             messages.error(request, '로그인 정보가 올바르지 않습니다.')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'core/login.html', {'form': form})
+    
+    return render(request, 'core/login.html')
 
 def logout_view(request):
-    logout(request)
+    request.session.flush()
     return redirect('home')
