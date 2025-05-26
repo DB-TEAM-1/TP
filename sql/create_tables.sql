@@ -1,30 +1,24 @@
 -- Drop tables if they exist
-DROP TABLE IF EXISTS "Review";
-DROP TABLE IF EXISTS "Adoption";
-DROP TABLE IF EXISTS "Report";
-DROP TABLE IF EXISTS "Animal";
-DROP TABLE IF EXISTS "Shelter";
-DROP TABLE IF EXISTS "Users";
+DROP TABLE IF EXISTS "review";
+DROP TABLE IF EXISTS "adoption";
+DROP TABLE IF EXISTS "report";
+DROP TABLE IF EXISTS "animal";
+DROP TABLE IF EXISTS "shelter";
+DROP TABLE IF EXISTS "users";
 
 -- Create Users table (renamed from User to avoid reserved word)
-CREATE TABLE "Users" (
-    user_num SERIAL PRIMARY KEY,
-    username VARCHAR(150) NOT NULL UNIQUE,
-    password VARCHAR(128) NOT NULL,
-    name VARCHAR(100) NOT NULL,
+CREATE TABLE "users" (
+    user_num INT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    id VARCHAR(20) NOT NULL,
+    password VARCHAR(50) NOT NULL,
     region VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    email VARCHAR(254),
-    first_name VARCHAR(150),
-    last_name VARCHAR(150),
-    is_staff BOOLEAN DEFAULT FALSE,
-    is_active BOOLEAN DEFAULT TRUE,
-    date_joined TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_superuser BOOLEAN DEFAULT FALSE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create Shelter table
-CREATE TABLE "Shelter" (
+CREATE TABLE "shelter" (
     careRegNo VARCHAR(50) PRIMARY KEY,
     careNm VARCHAR(20) NOT NULL,
     orgNm VARCHAR(20) NOT NULL,
@@ -42,9 +36,9 @@ CREATE TABLE "Shelter" (
 );
 
 -- Create Animal table
-CREATE TABLE "Animal" (
+CREATE TABLE "animal" (
     desertionNo VARCHAR(20) PRIMARY KEY,
-    careRegNo VARCHAR(50) REFERENCES "Shelter"(careRegNo) ON DELETE CASCADE,
+    careRegNo VARCHAR(50) REFERENCES "shelter"(careRegNo) ON DELETE CASCADE,
     happenDt DATE,
     happenPlace VARCHAR(100) NOT NULL,
     kindCd VARCHAR(10) NOT NULL,
@@ -69,10 +63,10 @@ CREATE TABLE "Animal" (
 );
 
 -- Create Report table
-CREATE TABLE "Report" (
+CREATE TABLE "report" (
     report_id SERIAL PRIMARY KEY,
-    user_num INTEGER REFERENCES "Users"(user_num) ON DELETE CASCADE,
-    careRegNo VARCHAR(50) REFERENCES "Shelter"(careRegNo) ON DELETE CASCADE,
+    user_num INTEGER REFERENCES "users"(user_num) ON DELETE CASCADE,
+    careRegNo VARCHAR(50) REFERENCES "shelter"(careRegNo) ON DELETE CASCADE,
     reported_dt DATE NOT NULL,
     reported_time TIME NOT NULL,
     location VARCHAR(100) NOT NULL,
@@ -84,21 +78,21 @@ CREATE TABLE "Report" (
 );
 
 -- Create Adoption table
-CREATE TABLE "Adoption" (
+CREATE TABLE "adoption" (
     adoption_id SERIAL PRIMARY KEY,
-    user_num INTEGER REFERENCES "Users"(user_num) ON DELETE CASCADE,
-    desertionNo VARCHAR(20) REFERENCES "Animal"(desertionNo) ON DELETE CASCADE,
-    careRegNo VARCHAR(50) REFERENCES "Shelter"(careRegNo) ON DELETE CASCADE,
+    user_num INTEGER REFERENCES "users"(user_num) ON DELETE CASCADE,
+    desertionNo VARCHAR(20) REFERENCES "animal"(desertionNo) ON DELETE CASCADE,
+    careRegNo VARCHAR(50) REFERENCES "shelter"(careRegNo) ON DELETE CASCADE,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(10) NOT NULL CHECK (status IN ('신청', '승인됨', '거절됨', '완료됨'))
 );
 
 -- Create Review table
-CREATE TABLE "Review" (
+CREATE TABLE "review" (
     review_id SERIAL PRIMARY KEY,
-    user_num INTEGER REFERENCES "Users"(user_num) ON DELETE CASCADE,
-    desertionNo VARCHAR(20) REFERENCES "Animal"(desertionNo) ON DELETE CASCADE,
-    careRegNo VARCHAR(50) REFERENCES "Shelter"(careRegNo) ON DELETE CASCADE,
+    user_num INTEGER REFERENCES "users"(user_num) ON DELETE CASCADE,
+    desertionNo VARCHAR(20) REFERENCES "animal"(desertionNo) ON DELETE CASCADE,
+    careRegNo VARCHAR(50) REFERENCES "shelter"(careRegNo) ON DELETE CASCADE,
     rating INTEGER NOT NULL,
     image_url TEXT,
     comment TEXT NOT NULL,
