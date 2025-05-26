@@ -3,6 +3,8 @@ from django.db import models
 
 # 사용자 정보
 class User(AbstractUser):
+    user_num = models.AutoField(primary_key=True)  # ✅ 사용자 고유 ID
+    name = models.CharField(max_length=100)        # ✅ 이름
     region = models.CharField(max_length=50, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

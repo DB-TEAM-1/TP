@@ -5,6 +5,8 @@ from django.contrib import messages
 from .models import Animal
 from .models import Shelter
 from .forms import CustomUserCreationForm
+from django.shortcuts import render, redirect
+
 
 def home(request):
     return render(request, 'core/home.html')
@@ -26,15 +28,23 @@ def adoptions(request):
 def reviews(request):
     return render(request, 'core/reviews.html')
 
+from django.shortcuts import render, redirect
+from .forms import CustomUserCreationForm
+
 def signup(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('login')
+            user = form.save(commit=False)
+            user.name = form.cleaned_data['name']
+            user.email = form.cleaned_data['email']
+            user.region = form.cleaned_data['region']
+            user.save()
+            return redirect('login')  # 'login' URL name이 있어야 함
     else:
         form = CustomUserCreationForm()
     return render(request, 'core/signup.html', {'form': form})
+
     
 def login_view(request):
     if request.method == 'POST':

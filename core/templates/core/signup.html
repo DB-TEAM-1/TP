@@ -17,13 +17,27 @@
                     <div class="card-body">
                         <form method="post">
                             {% csrf_token %}
-                            {{ form.as_p }}
+
+                            {% for field in form %}
+                                <div class="mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">
+                                            {{ field.errors|striptags }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-warning">가입하기</button>
                             </div>
                         </form>
+
                         <hr>
-                        <p class="text-center mb-0">계정이 있으시다면 <a href="/login/">로그인하기</a>
+                        <p class="text-center mb-0">
+                            계정이 있으시다면 <a href="{% url 'login' %}">로그인하기</a>
                         </p>
                     </div>
                 </div>
