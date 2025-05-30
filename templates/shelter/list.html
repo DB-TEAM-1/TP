@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}보호소 찾기{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">검색 필터</h5>
+                <form method="get">
+                    <div class="mb-3">
+                        <label for="region" class="form-label">지역</label>
+                        <select name="region" id="region" class="form-select">
+                            <option value="">전체</option>
+                            {% for region in regions %}
+                                <option value="{{ region }}" {% if request.GET.region == region %}selected{% endif %}>
+                                    {{ region }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="search" class="form-label">검색어</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ request.GET.search }}" placeholder="보호소 이름">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">검색</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for shelter in shelters %}
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ shelter.carenm|default:"이름 없음" }}</h5>
+                            <p class="card-text">
+                                <strong>주소:</strong> {{ shelter.careaddr|default:"주소 없음" }}<br>
+                                <strong>전화:</strong> {{ shelter.caretel|default:"전화번호 없음" }}<br>
+                                <strong>운영시간:</strong><br>
+                                평일: {{ shelter.weekoprstime|default:"-" }} ~ {{ shelter.weekopretime|default:"-" }}<br>
+                                주말: {{ shelter.weekendoprstime|default:"-" }} ~ {{ shelter.weekendopretime|default:"-" }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                {% if shelter.id %}
+                                    <a href="{% url 'shelter_detail' shelter.id %}" class="btn btn-primary">상세보기</a>
+                                {% else %}
+                                    <button class="btn btn-secondary" disabled>상세정보 없음</button>
+                                {% endif %}
+                                <small class="text-muted">보호동물: {{ shelter.animal_count|default:"0" }}마리</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        검색 결과가 없습니다.
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if shelters.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if shelters.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ shelters.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">이전</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in shelters.paginator.page_range %}
+                        <li class="page-item {% if shelters.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if shelters.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ shelters.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">다음</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

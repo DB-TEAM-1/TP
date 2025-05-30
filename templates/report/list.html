@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}유기동물 신고 현황{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">내 신고 목록</h2>
+    {% if my_reports %}
+        <div class="table-responsive mb-5">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>신고일시</th>
+                        <th>발견장소</th>
+                        <th>동물 정보</th>
+                        <th>담당 보호소</th>
+                        <th>연락처</th>
+                        <th>상태</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in my_reports %}
+                        <tr>
+                            <td>{{ report.reported_dt|date:"Y-m-d" }} {{ report.reported_time|time:"H:i" }}</td>
+                            <td>{{ report.location }}</td>
+                            <td>{{ report.estimated_kind }}</td>
+                            <td>{{ report.carenm }}</td>
+                            <td>{{ report.caretel }}</td>
+                            <td>
+                                <span class="badge {% if report.status == '접수' %}bg-primary
+                                      {% elif report.status == '처리중' %}bg-warning
+                                      {% elif report.status == '완료' %}bg-success
+                                      {% else %}bg-secondary{% endif %}">
+                                    {{ report.status }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info mb-5">
+            아직 신고한 내역이 없습니다.
+        </div>
+    {% endif %}
+
+    <h2 class="mb-4">최근 신고 현황</h2>
+    {% if recent_reports %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>신고일시</th>
+                        <th>발견장소</th>
+                        <th>동물 정보</th>
+                        <th>담당 보호소</th>
+                        <th>신고자</th>
+                        <th>상태</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in recent_reports %}
+                        <tr>
+                            <td>{{ report.reported_dt|date:"Y-m-d" }} {{ report.reported_time|time:"H:i" }}</td>
+                            <td>{{ report.location }}</td>
+                            <td>{{ report.estimated_kind }}</td>
+                            <td>{{ report.carenm }}</td>
+                            <td>{{ report.reporter_name }}</td>
+                            <td>
+                                <span class="badge {% if report.status == '접수' %}bg-primary
+                                      {% elif report.status == '처리중' %}bg-warning
+                                      {% elif report.status == '완료' %}bg-success
+                                      {% else %}bg-secondary{% endif %}">
+                                    {{ report.status }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            아직 신고 내역이 없습니다.
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'report_create' %}" class="btn btn-primary">
+            새로운 신고하기
+        </a>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,1 @@
+INSERT INTO review (review_id, user_num, desertionNo, careRegNo, rating, comment, image_url, created_at) VALUES (1, 2, '448545202500324', '348545201100002', 5, '정말 귀엽고 사랑스러운 아이였습니다.', 'http://example.com/review2.jpg', CURRENT_TIMESTAMP);

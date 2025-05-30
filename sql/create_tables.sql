@@ -23,9 +23,9 @@ CREATE TABLE "shelter" (
     careNm VARCHAR(20) NOT NULL,
     orgNm VARCHAR(20) NOT NULL,
     divisionNm VARCHAR(20) NOT NULL,
-    saveTrgtAnimal VARCHAR(20) NOT NULL,
-    careAddr VARCHAR(50) NOT NULL,
-    jibunAddr VARCHAR(50) NOT NULL,
+    saveTrgtAnimal VARCHAR(20),
+    careAddr VARCHAR(100) NOT NULL,
+    jibunAddr VARCHAR(100) NOT NULL,
     lat FLOAT,
     lng FLOAT,
     weekOprStime TIME,
@@ -72,7 +72,7 @@ CREATE TABLE "report" (
     location VARCHAR(100) NOT NULL,
     estimated_kind VARCHAR(50) NOT NULL,
     sex_cd VARCHAR(1) NOT NULL,
-    image_url TEXT,
+    image_url TEXT NOT NULL,
     status VARCHAR(20) NOT NULL,
     description TEXT NOT NULL
 );

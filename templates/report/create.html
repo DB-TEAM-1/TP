@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}유기동물 신고{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title mb-4">유기동물 신고하기</h3>
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    {% if messages %}
+                        <div class="alert alert-danger">
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="kind" class="form-label">동물 종류</label>
+                        <select name="kind" id="kind" class="form-select" required>
+                            <option value="">선택하세요</option>
+                            {% for value, label in kind_choices %}
+                                <option value="{{ value }}" {% if form.kind == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="breed" class="form-label">품종</label>
+                        <input type="text" name="breed" id="breed" 
+                               class="form-control"
+                               value="{{ form.breed|default:'' }}" 
+                               placeholder="예: 말티즈" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="color" class="form-label">색상</label>
+                        <input type="text" name="color" id="color" 
+                               class="form-control"
+                               value="{{ form.color|default:'' }}" 
+                               placeholder="예: 흰색" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sex" class="form-label">성별</label>
+                        <select name="sex" id="sex" class="form-select" required>
+                            <option value="">선택하세요</option>
+                            {% for value, label in sex_choices %}
+                                <option value="{{ value }}" {% if form.sex == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">발견 장소</label>
+                        <input type="text" name="location" id="location" 
+                               class="form-control"
+                               value="{{ form.location|default:'' }}" 
+                               placeholder="예: 서울시 강남구 테헤란로" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">특징 설명</label>
+                        <textarea name="description" id="description" 
+                                  class="form-control"
+                                  rows="4" placeholder="동물의 특징을 자세히 설명해주세요" 
+                                  required>{{ form.description|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="image" class="form-label">사진</label>
+                        <input type="file" name="image" id="image" 
+                               class="form-control"
+                               accept="image/*">
+                        <div class="form-text">
+                            동물의 특징이 잘 보이는 사진을 업로드해주세요.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">신고하기</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
