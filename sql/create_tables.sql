@@ -39,19 +39,19 @@ CREATE TABLE "shelter" (
 CREATE TABLE "animal" (
     desertionNo VARCHAR(20) PRIMARY KEY,
     careRegNo VARCHAR(50) REFERENCES "shelter"(careRegNo) ON DELETE CASCADE,
-    date DATE NOT NULL, -- happenDt -> date
-    location VARCHAR(100) NOT NULL, -- happenPlace -> location
-    kindCd VARCHAR(10) NOT NULL,
-    upKindCd VARCHAR(10) NOT NULL,
-    upKindNm VARCHAR(20) NOT NULL,
-    kindNm VARCHAR(30) NOT NULL,
-    colorCd VARCHAR(30) NOT NULL,
-    age VARCHAR(30) NOT NULL,
-    weight VARCHAR(20) NOT NULL,
-    sexCd VARCHAR(10) NOT NULL,
-    neuterYn VARCHAR(10) NOT NULL,
+    date DATE, -- happenDt -> date
+    location VARCHAR(100), -- happenPlace -> location
+    kindCd VARCHAR(10),
+    upKindCd VARCHAR(10),
+    upKindNm VARCHAR(20),
+    kindNm VARCHAR(30),
+    colorCd VARCHAR(30),
+    age VARCHAR(30),
+    weight VARCHAR(20),
+    sexCd VARCHAR(10),
+    neuterYn VARCHAR(10),
     specialMark TEXT,
-    processState VARCHAR(20) NOT NULL,
+    processState VARCHAR(20),
     endReason VARCHAR(70),
     updTm TIMESTAMP,
     rfidCd VARCHAR(30),
