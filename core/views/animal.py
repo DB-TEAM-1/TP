@@ -12,7 +12,7 @@ def animal_list(request):
         # 기본 쿼리
         query = """
             SELECT a.desertionno, a.kindcd, a.kindnm, a.sexcd, a.age, 
-                   a.happenplace, a.popfile1, a.processstate, a.happendt,
+                   a.location, a.popfile1, a.processstate, a.date,
                    s.carenm, s.careaddr, s.caretel
             FROM animal a
             JOIN shelter s ON a.careregno = s.careregno
@@ -35,7 +35,7 @@ def animal_list(request):
         if filters:
             query += " AND " + " AND ".join(filters)
         
-        query += " ORDER BY a.happendt DESC"
+        query += " ORDER BY a.date DESC"
         
         cursor.execute(query, params)
         animals = dictfetchall(cursor)
@@ -87,7 +87,7 @@ def animal_detail(request, desertion_no):
         # 동물 정보 조회
         cursor.execute("""
             SELECT a.desertionno, a.kindcd, a.kindnm, a.sexcd, a.age,
-                   a.happenplace, a.popfile1, a.processstate, a.happendt,
+                   a.location, a.popfile1, a.processstate, a.date,
                    a.neuteryn, a.weight, a.specialmark,
                    s.carenm, s.careaddr, s.caretel, s.careregno,
                    s.weekoprstime, s.weekopretime,

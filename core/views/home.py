@@ -5,11 +5,11 @@ def home(request):
     with connection.cursor() as cursor:
         # 최근 등록된 동물 조회
         cursor.execute("""
-            SELECT a.desertionno, a.kindnm, a.sexcd, a.age, a.happenplace, a.popfile1, a.processstate, s.carenm
+            SELECT a.desertionno, a.kindnm, a.sexcd, a.age, a.location, a.popfile1, a.processstate, s.carenm
             FROM animal a
             JOIN shelter s ON a.careregno = s.careregno
             WHERE a.processstate = '보호중'
-            ORDER BY a.happendt DESC
+            ORDER BY a.date DESC
             LIMIT 6
         """)
         recent_animals = dictfetchall(cursor)

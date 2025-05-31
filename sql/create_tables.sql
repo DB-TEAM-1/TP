@@ -39,8 +39,8 @@ CREATE TABLE "shelter" (
 CREATE TABLE "animal" (
     desertionNo VARCHAR(20) PRIMARY KEY,
     careRegNo VARCHAR(50) REFERENCES "shelter"(careRegNo) ON DELETE CASCADE,
-    happenDt DATE,
-    happenPlace VARCHAR(100) NOT NULL,
+    date DATE NOT NULL, -- happenDt -> date
+    location VARCHAR(100) NOT NULL, -- happenPlace -> location
     kindCd VARCHAR(10) NOT NULL,
     upKindCd VARCHAR(10) NOT NULL,
     upKindNm VARCHAR(20) NOT NULL,
@@ -48,18 +48,18 @@ CREATE TABLE "animal" (
     colorCd VARCHAR(30) NOT NULL,
     age VARCHAR(30) NOT NULL,
     weight VARCHAR(20) NOT NULL,
-    sexCd VARCHAR(1) NOT NULL,
-    neuterYn VARCHAR(1) NOT NULL,
+    sexCd VARCHAR(10) NOT NULL,
+    neuterYn VARCHAR(10) NOT NULL,
     specialMark TEXT,
     processState VARCHAR(20) NOT NULL,
-    endReason VARCHAR(30),
+    endReason VARCHAR(70),
     updTm TIMESTAMP,
     rfidCd VARCHAR(30),
     popfile1 TEXT,
-    vaccinationChk VARCHAR(1),
-    healthChk VARCHAR(1),
-    sfeSoci VARCHAR(1),
-    sfeHealth VARCHAR(1)
+    vaccinationChk VARCHAR(100),
+    healthChk VARCHAR(100),
+    sfeSoci VARCHAR(70),
+    sfeHealth VARCHAR(70)
 );
 
 -- Create Report table
@@ -67,12 +67,11 @@ CREATE TABLE "report" (
     report_id SERIAL PRIMARY KEY,
     user_num INTEGER REFERENCES "users"(user_num) ON DELETE CASCADE,
     careRegNo VARCHAR(50) REFERENCES "shelter"(careRegNo) ON DELETE CASCADE,
-    reported_dt DATE NOT NULL,
-    reported_time TIME NOT NULL,
+    date DATE NOT NULL, -- reported_dt -> date
     location VARCHAR(100) NOT NULL,
-    estimated_kind VARCHAR(50) NOT NULL,
-    sex_cd VARCHAR(1) NOT NULL,
-    image_url TEXT NOT NULL,
+    kindNm VARCHAR(30) NOT NULL, -- estimated_kind VARCHAR(50) NOT NULL -> kindNm VARCHAR(30) NOT NULL
+    sexCd VARCHAR(1) NOT NULL, -- sex_cd -> sexCd
+    popfile1 TEXT NOT NULL, -- image_url -> popfile1
     status VARCHAR(20) NOT NULL,
     description TEXT NOT NULL
 );

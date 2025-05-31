@@ -1,7 +1,7 @@
 {
   "response" : {
     "header" : {
-      "reqNo" : 350133,
+      "reqNo" : 350241,
       "resultCode" : "00",
       "resultMsg" : "NORMAL SERVICE."
     },
@@ -6700,7 +6700,7 @@
           "dataStdDt" : "2025-01-09"
         } ]
       },
-      "numOfRows" : 1000,
+      "numOfRows" : 300,
       "pageNo" : 1,
       "totalCount" : 579
     }

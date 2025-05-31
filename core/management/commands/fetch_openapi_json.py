@@ -1,13 +1,11 @@
 import requests
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from django.core.management.base import BaseCommand
-import xml.etree.ElementTree as ET
 
-# ✅ API 키를 환경 변수에서 가져오기
-ENCODED_KEY = os.getenv('OPENAPI_KEY', 'v6SVEDf4sehp1Wz6EBFGg9kVnwecjZnNV%2BXlMlg0rok%2BTc71MmWuwInbylo3t3%2FjCk%2Fl8w3wH8dalIlxdXrBhg%3D%3D')
+# ✅ 인코딩된 서비스 키 (꼭 URL 인코딩된 키 사용)
+ENCODED_KEY = 'v6SVEDf4sehp1Wz6EBFGg9kVnwecjZnNV%2BXlMlg0rok%2BTc71MmWuwInbylo3t3%2FjCk%2Fl8w3wH8dalIlxdXrBhg%3D%3D'
 
 # ✅ 보호소 정보 API (v2)
 SHELTER_API = f'https://apis.data.go.kr/1543061/animalShelterSrvc_v2?serviceKey={ENCODED_KEY}&_type=json&pageNo=1&numOfRows=1000'
@@ -19,25 +17,6 @@ ANIMAL_API = f'https://apis.data.go.kr/1543061/abandonmentPublicSrvc/abandonment
 SAVE_DIR = Path("openapi_json")
 SAVE_DIR.mkdir(exist_ok=True)
 
-def parse_xml_error(xml_text):
-    try:
-        root = ET.fromstring(xml_text)
-        error_msg = root.find('.//errMsg')
-        auth_msg = root.find('.//returnAuthMsg')
-        reason_code = root.find('.//returnReasonCode')
-        
-        error_info = []
-        if error_msg is not None:
-            error_info.append(f"에러 메시지: {error_msg.text}")
-        if auth_msg is not None:
-            error_info.append(f"인증 메시지: {auth_msg.text}")
-        if reason_code is not None:
-            error_info.append(f"에러 코드: {reason_code.text}")
-            
-        return "\n".join(error_info)
-    except:
-        return "XML 파싱 실패"
-
 def save_json_from_api(api_url: str, filename_prefix: str):
     print(f"📡 {filename_prefix} 요청 중...")
     try:
@@ -47,16 +26,10 @@ def save_json_from_api(api_url: str, filename_prefix: str):
         print(f"📊 응답 상태 코드: {response.status_code}")
         
         # 응답 내용 확인
-        print(f"📄 응답 내용: {response.text[:200]}...")
+        print(f"📄 응답 내용: {response.text[:200]}...")  # 처음 200자만 출력
         
         response.raise_for_status()
         
-        # XML 응답인 경우 에러 메시지 파싱
-        if response.text.strip().startswith('<?xml'):
-            error_info = parse_xml_error(response.text)
-            print(f"❌ API 오류:\n{error_info}")
-            return
-            
         try:
             data = response.json()
         except json.JSONDecodeError as e:
@@ -84,9 +57,6 @@ class Command(BaseCommand):
     help = 'OpenAPI에서 보호소와 유기동물 데이터를 JSON으로 저장합니다.'
 
     def handle(self, *args, **options):
-        if ENCODED_KEY == 'v6SVEDf4sehp1Wz6EBFGg9kVnwecjZnNV%2BXlMlg0rok%2BTc71MmWuwInbylo3t3%2FjCk%2Fl8w3wH8dalIlxdXrBhg%3D%3D':
-            print("⚠️ 기본 API 키가 사용되고 있습니다. 환경 변수 OPENAPI_KEY를 설정해주세요.")
-        
         save_json_from_api(SHELTER_API, "shelter_data")
         save_json_from_api(ANIMAL_API, "animal_data")
         print("🎉 모든 OpenAPI JSON 저장 완료") 

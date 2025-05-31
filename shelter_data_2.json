@@ -1,0 +1,15 @@
+{
+  "response" : {
+    "header" : {
+      "reqNo" : 350242,
+      "resultCode" : "00",
+      "resultMsg" : "NORMAL SERVICE."
+    },
+    "body" : {
+      "items" : { },
+      "numOfRows" : 300,
+      "pageNo" : 2,
+      "totalCount" : 579
+    }
+  }
+}
