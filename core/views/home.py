@@ -30,25 +30,34 @@ def home(request):
         """)
         recent_reviews = dictfetchall(cursor)
         
-        # 통계 정보 조회
+        # 통계 정보 조회 (수정된 부분)
+        # 보호중인 동물 수 조회
         cursor.execute("""
-            SELECT 
-                COUNT(CASE WHEN processstate = '보호중' THEN 1 END) as total_animals,
-                COUNT(CASE WHEN processstate = '종료(입양)' THEN 1 END) as total_adoptions,
-                (SELECT COUNT(*) FROM shelter) as total_shelters
-            FROM animal
+            SELECT COUNT(*) FROM animal WHERE processstate = '보호중'
         """)
-        stats = dictfetchone(cursor)
-        
+        total_animals = cursor.fetchone()[0]
+
+        # 입양 완료 수 조회 (adoption 테이블에서 status가 '완료됨'인 경우)
+        cursor.execute("""
+            SELECT COUNT(*) FROM adoption WHERE status = '완료됨'
+        """)
+        total_adoptions = cursor.fetchone()[0]
+
+        # 협력 보호소 수 조회
+        cursor.execute("""
+            SELECT COUNT(*) FROM shelter
+        """)
+        total_shelters = cursor.fetchone()[0]
+
         # 디버깅을 위한 출력
-        print("Statistics:", stats)
+        print("Statistics: total_animals=", total_animals, "total_adoptions=", total_adoptions, "total_shelters=", total_shelters)
     
     context = {
         'recent_animals': recent_animals,
         'recent_reviews': recent_reviews,
-        'total_animals': stats['total_animals'],
-        'total_adoptions': stats['total_adoptions'],
-        'total_shelters': stats['total_shelters']
+        'total_animals': total_animals,
+        'total_adoptions': total_adoptions,
+        'total_shelters': total_shelters
     }
     
     return render(request, 'home.html', context)
