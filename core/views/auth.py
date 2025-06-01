@@ -97,16 +97,28 @@ def login_view(request):
         password = request.POST.get('password')
         
         with connection.cursor() as cursor:
+            # 디버깅을 위한 쿼리 실행 전 출력
+            print(f"Attempting login with username: {username}")
+            
             cursor.execute("""
                 SELECT user_num, id, email, name
                 FROM users
                 WHERE id = %s AND password = %s
             """, [username, password])
             user = dictfetchone(cursor)
+            
+            # 디버깅을 위한 결과 출력
+            print(f"Login query result: {user}")
         
         if user:
             # 세션에 사용자 정보 저장
-            request.session['user'] = user
+            request.session['user'] = {
+                'user_num': int(user['user_num']),  # 정수형으로 변환하여 저장
+                'id': user['id'],
+                'name': user['name'],
+                'email': user['email']
+            }
+            print(f"Session user data: {request.session['user']}")  # 디버깅용
             messages.success(request, '로그인되었습니다.')
             return redirect('home')
         else:

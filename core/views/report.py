@@ -14,28 +14,48 @@ def report_list(request):
     with connection.cursor() as cursor:
         # 현재 로그인한 사용자의 신고 목록 조회
         cursor.execute("""
-            SELECT r.report_id, r.reported_dt, r.reported_time, 
-                   r.location, r.estimated_kind, r.status,
-                   s.carenm, s.caretel
+            SELECT r.report_id, 
+                   r.date as reported_dt,
+                   r.location, r.kindnm as estimated_kind, 
+                   r.sexcd, r.status,
+                   s.carenm, s.caretel,
+                   r.description, r.popfile1
             FROM report r
             JOIN shelter s ON r.careregno = s.careregno
             WHERE r.user_num = %s
-            ORDER BY r.reported_dt DESC, r.reported_time DESC
+            ORDER BY r.date DESC
         """, [request.session['user']['user_num']])
         my_reports = dictfetchall(cursor)
         
         # 전체 신고 목록 조회 (최근 10개)
         cursor.execute("""
-            SELECT r.report_id, r.reported_dt, r.reported_time, 
-                   r.location, r.estimated_kind, r.status,
-                   s.carenm, u.name as reporter_name
+            SELECT r.report_id, 
+                   r.date as reported_dt,
+                   r.location, r.kindnm as estimated_kind, 
+                   r.sexcd, r.status,
+                   s.carenm, u.name as reporter_name,
+                   r.description, r.popfile1
             FROM report r
             JOIN shelter s ON r.careregno = s.careregno
             JOIN users u ON r.user_num = u.user_num
-            ORDER BY r.reported_dt DESC, r.reported_time DESC
+            ORDER BY r.date DESC
             LIMIT 10
         """)
         recent_reports = dictfetchall(cursor)
+    
+    # 성별 코드를 한글로 변환하고 시간 정보 처리
+    for reports in [my_reports, recent_reports]:
+        for report in reports:
+            # 성별 변환
+            if report['sexcd'] == 'M':
+                report['sexcd'] = '수컷'
+            elif report['sexcd'] == 'F':
+                report['sexcd'] = '암컷'
+            else:
+                report['sexcd'] = '알 수 없음'
+            
+            # 날짜 객체에서 시간 정보 설정
+            report['reported_time'] = '00:00'  # 시간이 없으므로 기본값 설정
     
     context = {
         'my_reports': my_reports,
@@ -119,17 +139,16 @@ def report_create(request):
             # 신고 등록
             cursor.execute("""
                 INSERT INTO report (
-                    user_num, careregno, reported_dt, reported_time,
-                    location, estimated_kind, sex_cd, image_url,
+                    user_num, careregno, date,
+                    location, kindnm, sexcd, popfile1,
                     status, description
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
             """, [
                 request.session['user']['user_num'],
                 shelter_id,
                 now.date(),
-                now.time(),
                 location,
                 f"{kind} - {breed} ({color})",  # 품종 정보를 하나의 문자열로 결합
                 sex,

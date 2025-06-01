@@ -28,9 +28,17 @@ def animal_list(request):
         if request.GET.get('sex'):
             filters.append("a.sexcd = %s")
             params.append(request.GET['sex'])
-        if request.GET.get('region'):
-            filters.append("s.careaddr LIKE %s")
-            params.append(f"%{request.GET['region']}%")
+        if request.GET.get('shelter'):
+            filters.append("s.careregno = %s")
+            params.append(request.GET['shelter'])
+        if request.GET.get('province'):
+            province = request.GET.get('province')
+            if request.GET.get('city'):
+                filters.append("s.careaddr LIKE %s")
+                params.append(f"{province} {request.GET['city']}%")
+            else:
+                filters.append("s.careaddr LIKE %s")
+                params.append(f"{province}%")
         
         if filters:
             query += " AND " + " AND ".join(filters)
@@ -63,12 +71,23 @@ def animal_list(request):
         # 지역 목록 조회
         cursor.execute("""
             SELECT DISTINCT 
-                split_part(careaddr, ' ', 1) || ' ' || split_part(careaddr, ' ', 2) as region
+                split_part(careaddr, ' ', 1) as province,
+                split_part(careaddr, ' ', 2) as city
             FROM shelter
-            ORDER BY region
+            ORDER BY province, city
         """)
-        regions = [row['region'] for row in dictfetchall(cursor)]
-               
+        regions = dictfetchall(cursor)
+        
+        # 지역 데이터 구조화
+        region_data = {}
+        for region in regions:
+            province = region['province']
+            city = region['city']
+            if province not in region_data:
+                region_data[province] = []
+            if city:  # city가 비어있지 않은 경우에만 추가
+                region_data[province].append(city)
+    
     # 페이지네이션
     paginator = Paginator(animals, 12)  # 페이지당 12개 항목
     page_number = request.GET.get('page', 1)
@@ -77,7 +96,7 @@ def animal_list(request):
     context = {
         'animals': page_obj,
         'kinds': kinds,
-        'regions': regions
+        'region_data': region_data
     }
     
     return render(request, 'animal/list.html', context)
@@ -147,14 +166,26 @@ def adoption_apply(request, desertion_no):
         messages.error(request, '로그인이 필요한 서비스입니다.')
         return redirect('login')
 
-    # 이미 신청한 동물인지 확인
+    user_num = request.session['user']['user_num']
+
     with connection.cursor() as cursor:
+        # 사용자 존재 여부 확인
+        cursor.execute("""
+            SELECT user_num FROM users WHERE user_num = %s
+        """, [user_num])
+        user = cursor.fetchone()
+        
+        if not user:
+            messages.error(request, '사용자 정보가 올바르지 않습니다. 다시 로그인해주세요.')
+            return redirect('logout')  # 로그아웃 처리
+
+        # 이미 신청한 동물인지 확인
         cursor.execute("""
             SELECT status
             FROM adoption
             WHERE user_num = %s AND desertionno = %s
             AND status NOT IN ('거절됨')
-        """, [request.session['user']['user_num'], desertion_no])
+        """, [user_num, desertion_no])
         existing_adoption = cursor.fetchone()
         
         if existing_adoption:
@@ -186,7 +217,7 @@ def adoption_apply(request, desertion_no):
                 %s, %s, %s, NOW(), '신청'
             )
         """, [
-            request.session['user']['user_num'],
+            user_num,
             desertion_no,
             animal['careregno']
         ])

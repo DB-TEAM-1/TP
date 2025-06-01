@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}입양 후기 작성{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rating {
+        color: #ffc107;
+        font-size: 1.5rem;
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+    }
+    .rating input[type="radio"] {
+        display: none;
+    }
+    .rating label {
+        cursor: pointer;
+        padding: 0 0.1em;
+    }
+    .rating label:hover,
+    .rating label:hover ~ label,
+    .rating input[type="radio"]:checked ~ label {
+        color: #ffc107;
+    }
+    .rating label:hover > i,
+    .rating label:hover ~ label > i,
+    .rating input[type="radio"]:checked ~ label > i {
+        content: "\F586";
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'review_list' %}">입양 후기</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">후기 작성</li>
+                </ol>
+            </nav>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">입양 동물 정보</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% if animal.popfile1 %}
+                                <img src="{{ animal.popfile1 }}" class="img-fluid rounded" alt="{{ animal.kindnm }}">
+                            {% else %}
+                                <img src="/static/images/no-image.jpg" class="img-fluid rounded" alt="이미지 없음">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <p class="mb-2"><strong>품종:</strong> {{ animal.kindnm }}</p>
+                            <p class="mb-2"><strong>보호소:</strong> {{ animal.shelter_name }}</p>
+                            <p class="mb-0"><strong>상태:</strong> {{ animal.processstate }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">후기 작성</h5>
+                    <form method="post" action="{% url 'review_create' desertion_no=animal.desertionno %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">별점</label>
+                            <div class="rating">
+                                {% for i in "54321"|make_list %}
+                                    <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+                                    <label for="star{{ i }}"><i class="bi bi-star"></i></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="image_url" class="form-label">이미지 URL (선택사항)</label>
+                            <input type="url" class="form-control" id="image_url" name="image_url" placeholder="http://">
+                        </div>
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">후기 내용</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="10" required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'review_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> 취소
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 등록하기
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ratingContainer = document.querySelector('.rating');
+        const ratingInputs = ratingContainer.querySelectorAll('input[type="radio"]');
+        const ratingLabels = ratingContainer.querySelectorAll('label');
+
+        // 별점 초기화
+        function resetStars() {
+            ratingLabels.forEach(label => {
+                label.innerHTML = '<i class="bi bi-star"></i>';
+            });
+        }
+
+        // 특정 별점까지 채우기
+        function fillStars(rating) {
+            resetStars();
+            for (let i = 4; i >= 5 - rating; i--) {
+                ratingLabels[i].innerHTML = '<i class="bi bi-star-fill"></i>';
+            }
+        }
+
+        // 별점 선택 이벤트
+        ratingInputs.forEach((input, index) => {
+            input.addEventListener('change', function() {
+                fillStars(this.value);
+            });
+        });
+
+        // 마우스 오버 이벤트
+        ratingLabels.forEach((label, index) => {
+            label.addEventListener('mouseover', function() {
+                fillStars(5 - index);
+            });
+
+            label.addEventListener('mouseout', function() {
+                const selectedRating = ratingContainer.querySelector('input[type="radio"]:checked');
+                if (selectedRating) {
+                    fillStars(selectedRating.value);
+                } else {
+                    resetStars();
+                }
+            });
+        });
+    });
+
+    // 폼 제출 전 유효성 검사
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const rating = document.querySelector('input[name="rating"]:checked');
+        const comment = document.querySelector('#comment').value.trim();
+
+        if (!rating) {
+            e.preventDefault();
+            alert('별점을 선택해주세요.');
+            return;
+        }
+
+        if (!comment) {
+            e.preventDefault();
+            alert('후기 내용을 입력해주세요.');
+            return;
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %} 

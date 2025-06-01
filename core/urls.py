@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import home, animal, shelter, report, auth
+from .views import home, animal, shelter, report, auth, review
 
 urlpatterns = [
     # 메인 페이지
@@ -23,7 +23,12 @@ urlpatterns = [
     path('login/', auth.login_view, name='login'),
     path('logout/', auth.logout_view, name='logout'),
     
-    # 입양 신청 관련 URL
+    # 입양 신청 관련
     path('adoption/', animal.adoption_list, name='adoption_list'),
     path('adoption/apply/<str:desertion_no>/', animal.adoption_apply, name='adoption_apply'),
+    
+    # 입양 후기 관련
+    path('reviews/', review.review_list, name='review_list'),
+    path('reviews/create/<str:desertion_no>/', review.review_create, name='review_create'),
+    path('reviews/<int:review_id>/', review.review_detail, name='review_detail'),
 ]

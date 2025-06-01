@@ -21,6 +21,34 @@
         height: 100%;
         object-fit: cover;
     }
+    .review-list .review-item {
+        border-bottom: 1px solid #dee2e6;
+        padding: 1rem 0;
+    }
+    .review-list .review-item:last-child {
+        border-bottom: none;
+    }
+    .review-item .review-image {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .rating {
+        color: #ffc107;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+        display: inline-block;
+    }
+    .rating i {
+        margin-right: 2px;
+    }
+    .rating .bi-star-fill {
+        color: #ffc107;
+    }
+    .rating .bi-star {
+        color: #e4e5e9;
+    }
 </style>
 {% endblock %}
 
@@ -28,7 +56,7 @@
 <div class="container">
     <!-- 히어로 섹션 -->
     <div class="px-4 py-5 my-5 text-center">
-        <h1 class="display-5 fw-bold text-body-emphasis">새로운 가족을 찾아주세요</h1>
+        <h1 class="display-5 fw-bold text-body-emphasis">새로운 가족이 되어주세요</h1>
         <div class="col-lg-6 mx-auto">
             <p class="lead mb-4">
                 많은 동물들이 새로운 가족을 기다리고 있습니다.<br>
@@ -80,28 +108,41 @@
     <!-- 입양 후기 -->
     <div class="my-5">
         <h2 class="text-center mb-4">입양 후기</h2>
-        <div class="row row-cols-1 row-cols-md-2 g-4">
+        <div class="review-list">
             {% for review in recent_reviews %}
-                <div class="col">
-                    <div class="card">
+                <div class="review-item">
+                    <div class="d-flex gap-3">
                         {% if review.image_url %}
-                            <img src="{{ review.image_url }}" class="card-img-top" alt="후기 이미지">
+                            <img src="{{ review.image_url }}" class="review-image" alt="후기 이미지">
+                        {% elif review.popfile1 %}
+                            <img src="{{ review.popfile1 }}" class="review-image" alt="동물 이미지">
+                        {% else %}
+                            <img src="/static/images/no-image.jpg" class="review-image" alt="이미지 없음">
                         {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                {% for i in ""|ljust:review.rating %}⭐{% endfor %}
-                            </h5>
-                            <p class="card-text">{{ review.comment }}</p>
-                            <p class="card-text">
-                                <small class="text-muted">
-                                    작성자: {{ review.user_name }}<br>
-                                    작성일: {{ review.created_at|date:"Y-m-d" }}
-                                </small>
-                            </p>
+                        <div class="flex-grow-1">
+                            <div class="rating">
+                                {% with ''|center:5 as range %}
+                                {% for _ in range %}
+                                    {% if forloop.counter <= review.rating %}
+                                        <i class="bi bi-star-fill"></i>
+                                    {% else %}
+                                        <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <p class="mb-2">{{ review.comment }}</p>
+                            <div class="text-muted small">
+                                <span class="me-3">{{ review.user_name }}</span>
+                                <span>{{ review.created_at|date:"Y.m.d" }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'review_list' %}" class="btn btn-outline-primary">더 많은 후기 보기</a>
         </div>
     </div>
 

@@ -34,6 +34,11 @@ class CoreConfig(AppConfig):
                 with open(os.path.join(sql_dir, 'inserts', 'animal_inserts.sql'), 'r', encoding='utf-8') as f:
                     cursor.execute(f.read())
                     connection.commit()
+                
+                print("Inserting report animal data...")
+                with open(os.path.join(sql_dir, 'inserts', 'report_animal_inserts.sql'), 'r', encoding='utf-8') as f:
+                    cursor.execute(f.read())
+                    connection.commit()
 
                 print("Inserting adoption data...")
                 with open(os.path.join(sql_dir, 'inserts', 'adoption_inserts.sql'), 'r', encoding='utf-8') as f:
@@ -42,6 +47,11 @@ class CoreConfig(AppConfig):
 
                 print("Inserting report data...")
                 with open(os.path.join(sql_dir, 'inserts', 'report_inserts.sql'), 'r', encoding='utf-8') as f:
+                    cursor.execute(f.read())
+                    connection.commit()
+
+                print("Inserting review data...")
+                with open(os.path.join(sql_dir, 'inserts', 'review_inserts.sql'), 'r', encoding='utf-8') as f:
                     cursor.execute(f.read())
                     connection.commit()
 

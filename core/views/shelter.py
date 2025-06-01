@@ -4,7 +4,28 @@ from django.db import connection
 
 def shelter_list(request):
     with connection.cursor() as cursor:
-        # 기본 쿼리
+        # 지역 목록 조회 - PostgreSQL 버전
+        cursor.execute("""
+            SELECT DISTINCT 
+                split_part(careaddr, ' ', 1) as province,
+                split_part(careaddr, ' ', 2) as city
+            FROM shelter
+            ORDER BY province, city
+        """)
+        regions = dictfetchall(cursor)
+        
+        # 지역 데이터 구조화
+        region_data = {}
+        for region in regions:
+            province = region['province']
+            city = region['city']
+            if province not in region_data:
+                region_data[province] = []
+            if city:  # city가 비어있지 않은 경우에만 추가
+                region_data[province].append(city)
+
+        # 필터 적용
+        params = []
         query = """
             SELECT s.careregno, s.carenm, s.careaddr, s.caretel, 
                    s.weekoprstime, s.weekopretime, 
@@ -16,12 +37,15 @@ def shelter_list(request):
             FROM shelter s
             WHERE 1=1
         """
-        params = []
         
-        # 필터 적용
-        if request.GET.get('region'):
-            query += " AND careaddr LIKE %s"
-            params.append(f"%{request.GET['region']}%")
+        if request.GET.get('province'):
+            province = request.GET.get('province')
+            if request.GET.get('city'):
+                query += " AND careaddr LIKE %s"
+                params.append(f"{province} {request.GET['city']}%")
+            else:
+                query += " AND careaddr LIKE %s"
+                params.append(f"{province}%")
         
         if request.GET.get('search'):
             query += " AND (carenm LIKE %s OR careaddr LIKE %s)"
@@ -32,17 +56,7 @@ def shelter_list(request):
         
         cursor.execute(query, params)
         shelters = dictfetchall(cursor)
-        
-        # 지역 목록 조회 - PostgreSQL 버전
-        cursor.execute("""
-            SELECT DISTINCT 
-                split_part(careaddr, ' ', 1) || ' ' || split_part(careaddr, ' ', 2) AS region
-            FROM shelter
-            ORDER BY region
-        """)
-        regions = [row['region'] for row in dictfetchall(cursor)]
 
-    
     # 페이지네이션
     paginator = Paginator(shelters, 10)  # 페이지당 10개 항목
     page_number = request.GET.get('page', 1)
@@ -50,7 +64,7 @@ def shelter_list(request):
     
     context = {
         'shelters': page_obj,
-        'regions': regions
+        'region_data': region_data
     }
     
     return render(request, 'shelter/list.html', context)

@@ -34,11 +34,14 @@ def home(request):
         cursor.execute("""
             SELECT 
                 COUNT(CASE WHEN processstate = '보호중' THEN 1 END) as total_animals,
-                COUNT(CASE WHEN processstate = '입양완료' THEN 1 END) as total_adoptions,
+                COUNT(CASE WHEN processstate = '종료(입양)' THEN 1 END) as total_adoptions,
                 (SELECT COUNT(*) FROM shelter) as total_shelters
             FROM animal
         """)
         stats = dictfetchone(cursor)
+        
+        # 디버깅을 위한 출력
+        print("Statistics:", stats)
     
     context = {
         'recent_animals': recent_animals,
