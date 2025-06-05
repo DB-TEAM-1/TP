@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}내 신고 내역{% endblock %}
 
@@ -28,11 +29,11 @@
                         </div>
                         <p class="card-text">
                             <strong>위치:</strong> {{ report.location }}<br>
-                            <strong>신고일시:</strong> {{ report.created_at|date:"Y.m.d H:i" }}<br>
+                            <strong>신고일시:</strong> {{ report.date|date:"Y-m-d" }}<br>
                             <strong>설명:</strong> {{ report.description|truncatechars:100 }}
                         </p>
                         {% if report.image_url %}
-                            <img src="{{ report.image_url }}" class="img-fluid mb-3" alt="신고 이미지">
+                            <img src="{{ MEDIA_URL }}{{ report.image_url }}" class="img-fluid mb-3" alt="신고 이미지">
                         {% endif %}
                         <a href="{% url 'report_detail' report.report_id %}" class="btn btn-primary">상세보기</a>
                     </div>

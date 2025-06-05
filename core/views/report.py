@@ -14,7 +14,8 @@ def my_report_list(request):
     
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name
+        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name,
+               TO_CHAR(r.date, 'YYYY-MM-DD HH24:MI') as formatted_date
         FROM report r
         LEFT JOIN users u ON r.user_num = u.user_num
         LEFT JOIN shelter s ON r.careregno = s.careregno
@@ -43,7 +44,7 @@ def report_list(request):
             r.location,
             r.description,
             r.popfile1 as image_url,
-            r.date,
+            r.date, -- date 필드 그대로 가져옴
             r.status,
             u.name as reporter_name,
             s.carenm as shelter_name
@@ -96,6 +97,24 @@ def report_create(request):
         messages.error(request, '로그인이 필요한 서비스입니다.')
         return redirect('login')
 
+    user_num = request.session['user'].get('user_num')
+
+    # user_num 유효성 확인 (users 테이블에 존재하는지)
+    if not user_num:
+         messages.error(request, '사용자 정보가 유효하지 않습니다. 다시 로그인해주세요.')
+         return redirect('logout') # 유효하지 않은 경우 로그아웃 처리
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT user_num FROM users WHERE user_num = %s", [user_num])
+        user_exists = cursor.fetchone()
+        
+        if not user_exists:
+            messages.error(request, '사용자 정보가 데이터베이스에 없습니다. 다시 로그인해주세요.')
+            # 세션 정보가 데이터베이스와 불일치하므로 세션 제거 후 로그아웃
+            if 'user' in request.session:
+                 del request.session['user']
+            return redirect('logout')
+
     if request.method == 'POST':
         # 폼 데이터 가져오기
         kind = request.POST.get('kind')
@@ -128,11 +147,20 @@ def report_create(request):
         
         if missing_fields:
             messages.error(request, f'다음 필드를 입력해주세요: {", ".join(missing_fields)}')
-            return render(request, 'report/create.html', {
+            # 유효성 검사 실패 시 기존 입력 데이터와 선택지 다시 전달
+            context = {
                 'form': request.POST,
                 'kind_choices': [('개', '개'), ('고양이', '고양이'), ('기타', '기타')],
-                'sex_choices': [('M', '수컷'), ('F', '암컷'), ('U', '알 수 없음')]
-            })
+                'sex_choices': [('M', '수컷'), ('F', '암컷'), ('U', '알 수 없음')],
+                'user_num': user_num # user_num 유효성 검사 통과했음을 전달
+            }
+            # 기존 위치 정보가 있다면 context에 추가 (예: location, caregno)
+            if request.POST.get('location'):
+                 context['selectedLocation'] = request.POST.get('location')
+            if request.POST.get('careregno'):
+                 context['selectedShelterId'] = request.POST.get('careregno')
+
+            return render(request, 'report/create.html', context)
         
         # 이미지 처리
         image_path = None
@@ -140,29 +168,49 @@ def report_create(request):
             fs = FileSystemStorage()
             filename = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{image.name}"
             image_path = fs.save(f'reports/{filename}', image)
-        
+            print(f"DEBUG: Image saved to path: {image_path}") # 저장된 경로 출력
+
         # 가장 가까운 보호소 찾기 (간단한 구현: 동일 지역 내 첫 번째 보호소)
+        # NOTE: 이 부분은 클라이언트에서 선택된 보호소 정보(careregno)를 받아서 사용하는 것이 더 정확합니다.
+        # 현재는 location을 기준으로 다시 찾고 있습니다.
+        selected_careregno = request.POST.get('careregno')
+
+        if not selected_careregno:
+             # location 기반 보호소 찾기 (기존 로직)
+             with connection.cursor() as cursor:
+                 cursor.execute("""
+                     SELECT careregno
+                     FROM shelter
+                     WHERE careaddr LIKE %s
+                     LIMIT 1
+                 """, [f"%{location.split()[0]}%"])  # 첫 번째 지역명으로 검색
+                 result = cursor.fetchone()
+                 
+                 if not result:
+                     messages.error(request, '해당 지역에 보호소가 없습니다.')
+                     # 유효성 검사 실패 시와 유사하게 context 구성하여 반환
+                     context = {
+                         'form': request.POST,
+                         'kind_choices': [('개', '개'), ('고양이', '고양이'), ('기타', '기타')],
+                         'sex_choices': [('M', '수컷'), ('F', '암컷'), ('U', '알 수 없음')],
+                         'user_num': user_num
+                     }
+                     # 기존 위치 정보가 있다면 context에 추가
+                     if request.POST.get('location'):
+                          context['selectedLocation'] = request.POST.get('location')
+                     
+                     return render(request, 'report/create.html', context)
+                 
+                 shelter_id = result[0]
+        else:
+            # 클라이언트에서 받은 careregno 사용
+            shelter_id = selected_careregno
+
+
+        now = datetime.now()
+        
+        # 신고 등록
         with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT careregno
-                FROM shelter
-                WHERE careaddr LIKE %s
-                LIMIT 1
-            """, [f"%{location.split()[0]}%"])  # 첫 번째 지역명으로 검색
-            result = cursor.fetchone()
-            
-            if not result:
-                messages.error(request, '해당 지역에 보호소가 없습니다.')
-                return render(request, 'report/create.html', {
-                    'form': request.POST,
-                    'kind_choices': [('개', '개'), ('고양이', '고양이'), ('기타', '기타')],
-                    'sex_choices': [('M', '수컷'), ('F', '암컷'), ('U', '알 수 없음')]
-                })
-            
-            shelter_id = result[0]
-            now = datetime.now()
-            
-            # 신고 등록
             cursor.execute("""
                 INSERT INTO report (
                     user_num, careregno, date,
@@ -172,13 +220,13 @@ def report_create(request):
                     %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
             """, [
-                request.session['user']['user_num'],
+                user_num, # 이미 유효성 검사된 user_num 사용
                 shelter_id,
-                now.date(),
+                now,  # 날짜와 시간 모두 저장
                 location,
                 f"{kind} - {breed} ({color})",  # 품종 정보를 하나의 문자열로 결합
                 sex,
-                image_path,
+                image_path, # 파일 시스템에 저장된 상대 경로
                 '접수',
                 description
             ])
@@ -187,9 +235,15 @@ def report_create(request):
         return redirect('home')
     
     # GET 요청: 신고 폼 표시
+    # GET 요청 시에도 user_num 유효성 확인
+    if not user_num:
+         messages.error(request, '사용자 정보가 유효하지 않습니다. 다시 로그인해주세요.')
+         return redirect('logout') # 유효하지 않은 경우 로그아웃 처리
+
     context = {
         'kind_choices': [('개', '개'), ('고양이', '고양이'), ('기타', '기타')],
-        'sex_choices': [('M', '수컷'), ('F', '암컷'), ('U', '알 수 없음')]
+        'sex_choices': [('M', '수컷'), ('F', '암컷'), ('U', '알 수 없음')],
+        'user_num': user_num # 유효성 검사 통과한 user_num 전달 (템플릿에서 활용 가능)
     }
     
     return render(request, 'report/create.html', context)
@@ -203,7 +257,8 @@ def report_detail(request, report_id):
     # 신고 정보 조회
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name
+        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name,
+               r.date
         FROM report r
         LEFT JOIN users u ON r.user_num = u.user_num
         LEFT JOIN shelter s ON r.careregno = s.careregno

@@ -124,6 +124,9 @@ def login_view(request):
         else:
             messages.error(request, '아이디 또는 비밀번호가 올바르지 않습니다.')
     
+    # GET 요청 시 기존 메시지 비우기
+    list(messages.get_messages(request))
+    
     return render(request, 'registration/login.html')
 
 def logout_view(request):

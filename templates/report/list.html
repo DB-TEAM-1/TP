@@ -16,6 +16,7 @@
                         <th>담당 보호소</th>
                         <th>신고자</th>
                         <th>상태</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -33,6 +34,9 @@
                                       {% else %}bg-secondary{% endif %}">
                                     {{ report.status }}
                                 </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'report_detail' report.report_id %}" class="btn btn-sm btn-outline-primary">상세보기</a>
                             </td>
                         </tr>
                     {% endfor %}
