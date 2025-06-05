@@ -142,7 +142,20 @@
                     resetStars();
                 }
             });
+            
+            // 별점 레이블 클릭 이벤트 추가
+            label.addEventListener('click', function() {
+                const ratingValue = 5 - index; // 클릭한 별점에 해당하는 값 (5, 4, 3, 2, 1)
+                const targetInputId = 'star' + ratingValue;
+                const targetInput = document.getElementById(targetInputId);
+                
+                if (targetInput) {
+                    targetInput.checked = true; // 해당 라디오 버튼을 checked 상태로 만듦
+                    fillStars(ratingValue); // 시각적인 별 상태 업데이트
+                }
+            });
         });
+
     });
 
     // 폼 제출 전 유효성 검사
