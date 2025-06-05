@@ -4,49 +4,8 @@
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">내 신고 목록</h2>
-    {% if my_reports %}
-        <div class="table-responsive mb-5">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>신고일시</th>
-                        <th>발견장소</th>
-                        <th>동물 정보</th>
-                        <th>담당 보호소</th>
-                        <th>연락처</th>
-                        <th>상태</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for report in my_reports %}
-                        <tr>
-                            <td>{{ report.reported_dt|date:"Y-m-d" }} {{ report.reported_time|time:"H:i" }}</td>
-                            <td>{{ report.location }}</td>
-                            <td>{{ report.estimated_kind }}</td>
-                            <td>{{ report.carenm }}</td>
-                            <td>{{ report.caretel }}</td>
-                            <td>
-                                <span class="badge {% if report.status == '접수' %}bg-primary
-                                      {% elif report.status == '처리중' %}bg-warning
-                                      {% elif report.status == '완료' %}bg-success
-                                      {% else %}bg-secondary{% endif %}">
-                                    {{ report.status }}
-                                </span>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="alert alert-info mb-5">
-            아직 신고한 내역이 없습니다.
-        </div>
-    {% endif %}
-
     <h2 class="mb-4">최근 신고 현황</h2>
-    {% if recent_reports %}
+    {% if reports %}
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
@@ -60,12 +19,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for report in recent_reports %}
+                    {% for report in reports %}
                         <tr>
-                            <td>{{ report.reported_dt|date:"Y-m-d" }} {{ report.reported_time|time:"H:i" }}</td>
+                            <td>{{ report.date|date:"Y-m-d" }}</td>
                             <td>{{ report.location }}</td>
-                            <td>{{ report.estimated_kind }}</td>
-                            <td>{{ report.carenm }}</td>
+                            <td>{{ report.kindnm }}</td>
+                            <td>{{ report.shelter_name }}</td>
                             <td>{{ report.reporter_name }}</td>
                             <td>
                                 <span class="badge {% if report.status == '접수' %}bg-primary
@@ -80,16 +39,47 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- 페이지네이션 -->
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if reports.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; 처음</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reports.previous_page_number }}">이전</a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ reports.number }} / {{ reports.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if reports.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reports.next_page_number }}">다음</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reports.paginator.num_pages }}">마지막 &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
     {% else %}
         <div class="alert alert-info">
             아직 신고 내역이 없습니다.
         </div>
     {% endif %}
 
+    {% if request.session.user %}
     <div class="mt-4">
         <a href="{% url 'report_create' %}" class="btn btn-primary">
             새로운 신고하기
         </a>
     </div>
+    {% endif %}
 </div>
 {% endblock %} 

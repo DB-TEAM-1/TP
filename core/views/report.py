@@ -36,7 +36,17 @@ def report_list(request):
     """신고 목록 페이지"""
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name
+        SELECT 
+            r.report_id,
+            r.kindnm,
+            r.sexcd,
+            r.location,
+            r.description,
+            r.popfile1 as image_url,
+            r.date,
+            r.status,
+            u.name as reporter_name,
+            s.carenm as shelter_name
         FROM report r
         LEFT JOIN users u ON r.user_num = u.user_num
         LEFT JOIN shelter s ON r.careregno = s.careregno
@@ -51,7 +61,10 @@ def report_list(request):
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'report/list.html', {'reports': page_obj})
+    return render(request, 'report/list.html', {
+        'reports': page_obj,
+        'show_all_reports': True  # 모든 신고만 보이도록 표시
+    })
 
 def report_create(request):
     # 세션 기반 로그인 체크

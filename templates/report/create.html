@@ -1,93 +1,211 @@
 {% extends 'base.html' %}
 
-{% block title %}유기동물 신고{% endblock %}
+{% block title %}유기동물 신고하기{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .shelter-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .shelter-card {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .shelter-card:hover {
+        background-color: #f8f9fa;
+    }
+    .shelter-card.selected {
+        background-color: #e9ecef;
+        border-color: #0d6efd;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
+<div class="container">
+    <h2 class="mb-4">유기동물 신고하기</h2>
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- 동물 정보 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">동물 정보</h5>
+            </div>
             <div class="card-body">
-                <h3 class="card-title mb-4">유기동물 신고하기</h3>
-                
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    
-                    {% if messages %}
-                        <div class="alert alert-danger">
-                            {% for message in messages %}
-                                {{ message }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    
-                    <div class="mb-3">
-                        <label for="kind" class="form-label">동물 종류</label>
-                        <select name="kind" id="kind" class="form-select" required>
-                            <option value="">선택하세요</option>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="kind" class="form-label">품종</label>
+                        <select class="form-select" id="kind" name="kind" required>
+                            <option value="">품종 선택</option>
                             {% for value, label in kind_choices %}
-                                <option value="{{ value }}" {% if form.kind == value %}selected{% endif %}>{{ label }}</option>
+                                <option value="{{ value }}">{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="breed" class="form-label">품종</label>
-                        <input type="text" name="breed" id="breed" 
-                               class="form-control"
-                               value="{{ form.breed|default:'' }}" 
-                               placeholder="예: 말티즈" required>
+                    <div class="col-md-4 mb-3">
+                        <label for="breed" class="form-label">세부 품종</label>
+                        <input type="text" class="form-control" id="breed" name="breed" required>
                     </div>
-                    
-                    <div class="mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="color" class="form-label">색상</label>
-                        <input type="text" name="color" id="color" 
-                               class="form-control"
-                               value="{{ form.color|default:'' }}" 
-                               placeholder="예: 흰색" required>
+                        <input type="text" class="form-control" id="color" name="color" required>
                     </div>
-                    
-                    <div class="mb-3">
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
                         <label for="sex" class="form-label">성별</label>
-                        <select name="sex" id="sex" class="form-select" required>
-                            <option value="">선택하세요</option>
+                        <select class="form-select" id="sex" name="sex" required>
+                            <option value="">성별 선택</option>
                             {% for value, label in sex_choices %}
-                                <option value="{{ value }}" {% if form.sex == value %}selected{% endif %}>{{ label }}</option>
+                                <option value="{{ value }}">{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="location" class="form-label">발견 장소</label>
-                        <input type="text" name="location" id="location" 
-                               class="form-control"
-                               value="{{ form.location|default:'' }}" 
-                               placeholder="예: 서울시 강남구 테헤란로" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="description" class="form-label">특징 설명</label>
-                        <textarea name="description" id="description" 
-                                  class="form-control"
-                                  rows="4" placeholder="동물의 특징을 자세히 설명해주세요" 
-                                  required>{{ form.description|default:'' }}</textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="image" class="form-label">사진</label>
-                        <input type="file" name="image" id="image" 
-                               class="form-control"
-                               accept="image/*">
-                        <div class="form-text">
-                            동물의 특징이 잘 보이는 사진을 업로드해주세요.
-                        </div>
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">신고하기</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
-    </div>
+
+        <!-- 발견 장소 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">발견 장소</h5>
+            </div>
+            <div class="card-body">
+                <div class="filter-section">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="shelterSearch" placeholder="보호소 이름으로 검색">
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="regionFilter">
+                                <option value="">지역 선택</option>
+                                <option value="서울특별시">서울특별시</option>
+                                <option value="부산광역시">부산광역시</option>
+                                <option value="대구광역시">대구광역시</option>
+                                <option value="인천광역시">인천광역시</option>
+                                <option value="광주광역시">광주광역시</option>
+                                <option value="대전광역시">대전광역시</option>
+                                <option value="울산광역시">울산광역시</option>
+                                <option value="세종특별자치시">세종특별자치시</option>
+                                <option value="경기도">경기도</option>
+                                <option value="강원도">강원도</option>
+                                <option value="충청북도">충청북도</option>
+                                <option value="충청남도">충청남도</option>
+                                <option value="전라북도">전라북도</option>
+                                <option value="전라남도">전라남도</option>
+                                <option value="경상북도">경상북도</option>
+                                <option value="경상남도">경상남도</option>
+                                <option value="제주특별자치도">제주특별자치도</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-primary w-100" id="searchButton">검색</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="shelter-list">
+                    <div class="row" id="shelterList">
+                        <!-- 보호소 목록이 여기에 동적으로 로드됩니다 -->
+                    </div>
+                </div>
+
+                <input type="hidden" name="location" id="selectedLocation" required>
+                <input type="hidden" name="careregno" id="selectedShelterId" required>
+            </div>
+        </div>
+
+        <!-- 상세 설명 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">상세 설명</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="description" class="form-label">상세 설명</label>
+                    <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="image" class="form-label">사진</label>
+                    <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">신고하기</button>
+            <a href="{% url 'report_list' %}" class="btn btn-secondary">취소</a>
+        </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const shelterSearch = document.getElementById('shelterSearch');
+    const regionFilter = document.getElementById('regionFilter');
+    const searchButton = document.getElementById('searchButton');
+    const shelterList = document.getElementById('shelterList');
+    const selectedLocation = document.getElementById('selectedLocation');
+    const selectedShelterId = document.getElementById('selectedShelterId');
+
+    // 보호소 검색 함수
+    function searchShelters() {
+        const searchTerm = shelterSearch.value;
+        const region = regionFilter.value;
+
+        fetch(`/api/shelters/search/?name=${searchTerm}&region=${region}`)
+            .then(response => response.json())
+            .then(data => {
+                shelterList.innerHTML = '';
+                data.forEach(shelter => {
+                    const card = document.createElement('div');
+                    card.className = 'col-md-6 mb-3';
+                    card.innerHTML = `
+                        <div class="card shelter-card" data-shelter-id="${shelter.careregno}" data-location="${shelter.careaddr}">
+                            <div class="card-body">
+                                <h5 class="card-title">${shelter.carenm}</h5>
+                                <p class="card-text">
+                                    <i class="bi bi-geo-alt"></i> ${shelter.careaddr}<br>
+                                    <i class="bi bi-telephone"></i> ${shelter.caretel}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    shelterList.appendChild(card);
+                });
+            });
+    }
+
+    // 보호소 선택 이벤트
+    shelterList.addEventListener('click', function(e) {
+        const card = e.target.closest('.shelter-card');
+        if (card) {
+            // 이전 선택 제거
+            document.querySelectorAll('.shelter-card').forEach(c => c.classList.remove('selected'));
+            // 새로운 선택
+            card.classList.add('selected');
+            // 선택된 값 저장
+            selectedLocation.value = card.dataset.location;
+            selectedShelterId.value = card.dataset.shelterId;
+        }
+    });
+
+    // 검색 버튼 클릭 이벤트
+    searchButton.addEventListener('click', searchShelters);
+
+    // 초기 검색
+    searchShelters();
+});
+</script>
 {% endblock %} 

@@ -13,6 +13,7 @@ urlpatterns = [
     # 보호소 관련
     path('shelters/', shelter.shelter_list, name='shelter_list'),
     path('shelters/<int:shelter_id>/', shelter.shelter_detail, name='shelter_detail'),
+    path('api/shelters/search/', shelter.shelter_search, name='shelter_search'),
     
     # 신고 관련
     path('reports/create/', report.report_create, name='report_create'),
