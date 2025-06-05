@@ -4,65 +4,54 @@ from django.db import connection
 from django.core.files.storage import FileSystemStorage
 import os
 from datetime import datetime
+from django.core.paginator import Paginator
 
-def report_list(request):
-    # 세션 기반 로그인 체크
-    if not request.session.get('user'):
-        messages.error(request, '로그인이 필요한 서비스입니다.')
+def my_report_list(request):
+    """내 신고 목록 페이지"""
+    # 로그인 체크
+    if 'user' not in request.session:
         return redirect('login')
     
-    with connection.cursor() as cursor:
-        # 현재 로그인한 사용자의 신고 목록 조회
-        cursor.execute("""
-            SELECT r.report_id, 
-                   r.date as reported_dt,
-                   r.location, r.kindnm as estimated_kind, 
-                   r.sexcd, r.status,
-                   s.carenm, s.caretel,
-                   r.description, r.popfile1
-            FROM report r
-            JOIN shelter s ON r.careregno = s.careregno
-            WHERE r.user_num = %s
-            ORDER BY r.date DESC
-        """, [request.session['user']['user_num']])
-        my_reports = dictfetchall(cursor)
-        
-        # 전체 신고 목록 조회 (최근 10개)
-        cursor.execute("""
-            SELECT r.report_id, 
-                   r.date as reported_dt,
-                   r.location, r.kindnm as estimated_kind, 
-                   r.sexcd, r.status,
-                   s.carenm, u.name as reporter_name,
-                   r.description, r.popfile1
-            FROM report r
-            JOIN shelter s ON r.careregno = s.careregno
-            JOIN users u ON r.user_num = u.user_num
-            ORDER BY r.date DESC
-            LIMIT 10
-        """)
-        recent_reports = dictfetchall(cursor)
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name
+        FROM report r
+        LEFT JOIN users u ON r.user_num = u.user_num
+        LEFT JOIN shelter s ON r.careregno = s.careregno
+        WHERE r.user_num = %s
+        ORDER BY r.date DESC
+    """, [request.session['user']['user_num']])
     
-    # 성별 코드를 한글로 변환하고 시간 정보 처리
-    for reports in [my_reports, recent_reports]:
-        for report in reports:
-            # 성별 변환
-            if report['sexcd'] == 'M':
-                report['sexcd'] = '수컷'
-            elif report['sexcd'] == 'F':
-                report['sexcd'] = '암컷'
-            else:
-                report['sexcd'] = '알 수 없음'
-            
-            # 날짜 객체에서 시간 정보 설정
-            report['reported_time'] = '00:00'  # 시간이 없으므로 기본값 설정
+    columns = [col[0] for col in cursor.description]
+    reports = [dict(zip(columns, row)) for row in cursor.fetchall()]
     
-    context = {
-        'my_reports': my_reports,
-        'recent_reports': recent_reports
-    }
+    # 페이지네이션
+    paginator = Paginator(reports, 10)  # 페이지당 10개 항목
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
     
-    return render(request, 'report/list.html', context)
+    return render(request, 'report/my_list.html', {'reports': page_obj})
+
+def report_list(request):
+    """신고 목록 페이지"""
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name
+        FROM report r
+        LEFT JOIN users u ON r.user_num = u.user_num
+        LEFT JOIN shelter s ON r.careregno = s.careregno
+        ORDER BY r.date DESC
+    """)
+    
+    columns = [col[0] for col in cursor.description]
+    reports = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+    # 페이지네이션
+    paginator = Paginator(reports, 10)  # 페이지당 10개 항목
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'report/list.html', {'reports': page_obj})
 
 def report_create(request):
     # 세션 기반 로그인 체크
@@ -167,6 +156,37 @@ def report_create(request):
     }
     
     return render(request, 'report/create.html', context)
+
+def report_detail(request, report_id):
+    """신고 상세 페이지"""
+    # 로그인 체크
+    if 'user' not in request.session:
+        return redirect('login')
+    
+    # 신고 정보 조회
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name
+        FROM report r
+        LEFT JOIN users u ON r.user_num = u.user_num
+        LEFT JOIN shelter s ON r.careregno = s.careregno
+        WHERE r.report_id = %s
+    """, [report_id])
+    
+    columns = [col[0] for col in cursor.description]
+    report = dict(zip(columns, cursor.fetchone()))
+    
+    if not report:
+        messages.error(request, '존재하지 않는 신고입니다.')
+        return redirect('report_list')
+    
+    # 신고 작성자만 수정/삭제 가능
+    is_owner = request.session['user']['user_num'] == report['user_num']
+    
+    return render(request, 'report/detail.html', {
+        'report': report,
+        'is_owner': is_owner
+    })
 
 def dictfetchall(cursor):
     """Return all rows from a cursor as a dict"""

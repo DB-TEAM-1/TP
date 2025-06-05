@@ -15,8 +15,10 @@ urlpatterns = [
     path('shelters/<int:shelter_id>/', shelter.shelter_detail, name='shelter_detail'),
     
     # 신고 관련
-    path('reports/', report.report_list, name='report_list'),
     path('reports/create/', report.report_create, name='report_create'),
+    path('reports/list/', report.report_list, name='report_list'),
+    path('reports/my-list/', report.my_report_list, name='my_report_list'),
+    path('reports/<int:report_id>/', report.report_detail, name='report_detail'),
     
     # 인증 관련
     path('register/', auth.register, name='register'),

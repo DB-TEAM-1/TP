@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}내 신고 내역{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">
+        <i class="bi bi-exclamation-circle-fill text-warning"></i>
+        내 신고 내역
+    </h2>
+
+    <div class="row">
+        {% for report in reports %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">
+                                {% if report.report_type == 'found' %}
+                                    발견 신고
+                                {% else %}
+                                    실종 신고
+                                {% endif %}
+                            </h5>
+                            <span class="badge {% if report.status == '처리중' %}bg-warning{% elif report.status == '완료' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ report.status }}
+                            </span>
+                        </div>
+                        <p class="card-text">
+                            <strong>위치:</strong> {{ report.location }}<br>
+                            <strong>신고일시:</strong> {{ report.created_at|date:"Y.m.d H:i" }}<br>
+                            <strong>설명:</strong> {{ report.description|truncatechars:100 }}
+                        </p>
+                        {% if report.image_url %}
+                            <img src="{{ report.image_url }}" class="img-fluid mb-3" alt="신고 이미지">
+                        {% endif %}
+                        <a href="{% url 'report_detail' report.report_id %}" class="btn btn-primary">상세보기</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    아직 신고한 내역이 없습니다.
+                    <a href="{% url 'report_create' %}" class="alert-link">첫 번째 신고를 작성해보세요!</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if reports.has_other_pages %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if reports.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">처음</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reports.previous_page_number }}">이전</a>
+                    </li>
+                {% endif %}
+                
+                {% for i in reports.paginator.page_range %}
+                    <li class="page-item {% if reports.number == i %}active{% endif %}">
+                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                    </li>
+                {% endfor %}
+                
+                {% if reports.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reports.next_page_number }}">다음</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reports.paginator.num_pages }}">마지막</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %} 

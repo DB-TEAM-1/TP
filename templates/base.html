@@ -23,11 +23,25 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'shelter_list' %}">보호소 찾기</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'review_list' %}">입양 후기</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="reviewDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            입양 후기
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="reviewDropdown">
+                            <li><a class="dropdown-item" href="{% url 'review_list' %}">후기 관람</a></li>
+                            {% if request.session.user %}
+                                <li><a class="dropdown-item" href="{% url 'adoption_list' %}">후기 작성</a></li>
+                            {% endif %}
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'report_create' %}">유기동물 신고</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="reportDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            유기동물 신고
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="reportDropdown">
+                            <li><a class="dropdown-item" href="{% url 'report_create' %}">신고 하기</a></li>
+                            <li><a class="dropdown-item" href="{% url 'report_list' %}">신고 열람</a></li>
+                        </ul>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
@@ -40,8 +54,8 @@
                                 <li><a class="dropdown-item" href="{% url 'adoption_list' %}">
                                     <i class="bi bi-heart-fill text-danger"></i> 입양 신청 현황
                                 </a></li>
-                                <li><a class="dropdown-item" href="{% url 'report_list' %}">
-                                    <i class="bi bi-exclamation-circle-fill text-warning"></i> 신고 내역
+                                <li><a class="dropdown-item" href="{% url 'my_report_list' %}">
+                                    <i class="bi bi-exclamation-circle-fill text-warning"></i> 내 신고 내역
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'logout' %}">로그아웃</a></li>
