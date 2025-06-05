@@ -22,7 +22,11 @@
                     <div class="row">
                         <div class="col-md-4">
                             {% if report.popfile1 %}
-                                <img src="/media/{{ report.popfile1 }}" class="img-fluid rounded" alt="신고 이미지">
+                                {% if report.popfile1|slice:":4" == "http" %}
+                                    <img src="{{ report.popfile1 }}" class="img-fluid rounded" alt="신고 이미지">
+                                {% else %}
+                                    <img src="/media/{{ report.popfile1 }}" class="img-fluid rounded" alt="신고 이미지">
+                                {% endif %}
                             {% else %}
                                 <img src="{% static 'images/no-image.jpg' %}" class="img-fluid rounded" alt="이미지 없음">
                             {% endif %}
