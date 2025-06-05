@@ -149,9 +149,20 @@
                 const targetInputId = 'star' + ratingValue;
                 const targetInput = document.getElementById(targetInputId);
                 
+                console.log(`Clicked label for rating: ${ratingValue}, target input ID: ${targetInputId}`); // 디버그 출력 1
+
                 if (targetInput) {
                     targetInput.checked = true; // 해당 라디오 버튼을 checked 상태로 만듦
-                    fillStars(ratingValue); // 시각적인 별 상태 업데이트
+                    console.log(`Target input ${targetInputId} checked: ${targetInput.checked}`); // 디버그 출력 2
+                    
+                    // 라디오 버튼의 change 이벤트를 강제로 발생시켜 별 모양 업데이트
+                    const changeEvent = new Event('change');
+                    targetInput.dispatchEvent(changeEvent);
+                    
+                    console.log(`Dispatched change event for ${targetInputId}`); // 디버그 출력 3
+
+                } else {
+                    console.log(`Target input with ID ${targetInputId} not found`); // 디버그 출력 4
                 }
             });
         });
