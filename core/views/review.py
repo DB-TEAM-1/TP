@@ -6,8 +6,8 @@ from datetime import datetime
 
 def review_list(request):
     with connection.cursor() as cursor:
-        # 모든 입양 후기 목록 조회
-        cursor.execute("""
+        # 기본 쿼리
+        query = """
             SELECT 
                 r.review_id, r.rating, r.comment, r.image_url, r.created_at,
                 u.name as user_name,
@@ -17,9 +17,48 @@ def review_list(request):
             JOIN users u ON r.user_num = u.user_num
             JOIN animal a ON r.desertionno = a.desertionno
             JOIN shelter s ON r.careregno = s.careregno
-            ORDER BY r.created_at DESC
-        """)
+            WHERE 1=1
+        """
+        params = []
+        
+        # 필터 적용
+        if request.GET.get('shelter'):
+            query += " AND s.carenm = %s"
+            params.append(request.GET['shelter'])
+        
+        if request.GET.get('animal'):
+            query += " AND a.kindnm = %s"
+            params.append(request.GET['animal'])
+        
+        if request.GET.get('rating'):
+            query += " AND r.rating = %s"
+            params.append(request.GET['rating'])
+        
+        if request.GET.get('date'):
+            query += " AND DATE(r.created_at) = %s"
+            params.append(request.GET['date'])
+        
+        query += " ORDER BY r.created_at DESC"
+        
+        cursor.execute(query, params)
         reviews = dictfetchall(cursor)
+        
+        # 필터 옵션 조회
+        cursor.execute("""
+            SELECT DISTINCT s.carenm as shelter_name
+            FROM review r
+            JOIN shelter s ON r.careregno = s.careregno
+            ORDER BY s.carenm
+        """)
+        shelters = [row['shelter_name'] for row in dictfetchall(cursor)]
+        
+        cursor.execute("""
+            SELECT DISTINCT a.kindnm
+            FROM review r
+            JOIN animal a ON r.desertionno = a.desertionno
+            ORDER BY a.kindnm
+        """)
+        animals = [row['kindnm'] for row in dictfetchall(cursor)]
         
         # 디버깅을 위한 데이터 출력
         print("=== Debug: Review Data ===")
@@ -35,7 +74,14 @@ def review_list(request):
     context = {
         'reviews': page_obj,
         'is_logged_in': bool(request.session.get('user')),
-        'current_user': request.session.get('user')
+        'current_user': request.session.get('user'),
+        'shelters': shelters,
+        'animals': animals,
+        'ratings': range(1, 6),  # 1~5 별점
+        'selected_shelter': request.GET.get('shelter', ''),
+        'selected_animal': request.GET.get('animal', ''),
+        'selected_rating': request.GET.get('rating', ''),
+        'selected_date': request.GET.get('date', '')
     }
     
     return render(request, 'review/list.html', context)

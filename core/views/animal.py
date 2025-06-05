@@ -37,8 +37,16 @@ def animal_list(request):
                 filters.append("s.careaddr LIKE %s")
                 params.append(f"{province} {request.GET['city']}%")
             else:
-                filters.append("s.careaddr LIKE %s")
-                params.append(f"{province}%")
+                # 전라북도와 강원도 선택 시 특별자치도 데이터도 포함
+                if province == '전라북도':
+                    filters.append("(s.careaddr LIKE %s OR s.careaddr LIKE %s)")
+                    params.extend(['전라북도%', '전북특별자치도%'])
+                elif province == '강원도':
+                    filters.append("(s.careaddr LIKE %s OR s.careaddr LIKE %s)")
+                    params.extend(['강원도%', '강원특별자치도%'])
+                else:
+                    filters.append("s.careaddr LIKE %s")
+                    params.append(f"{province}%")
         
         if filters:
             query += " AND " + " AND ".join(filters)
@@ -71,7 +79,11 @@ def animal_list(request):
         # 지역 목록 조회
         cursor.execute("""
             SELECT DISTINCT 
-                split_part(careaddr, ' ', 1) as province,
+                CASE 
+                    WHEN split_part(careaddr, ' ', 1) = '전북특별자치도' THEN '전라북도'
+                    WHEN split_part(careaddr, ' ', 1) = '강원특별자치도' THEN '강원도'
+                    ELSE split_part(careaddr, ' ', 1)
+                END as province,
                 split_part(careaddr, ' ', 2) as city
             FROM shelter
             ORDER BY province, city
