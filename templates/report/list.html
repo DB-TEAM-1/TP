@@ -39,31 +39,42 @@
                 </tbody>
             </table>
         </div>
-        
+
         <!-- 페이지네이션 -->
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
-                {% if reports.has_previous %}
+                {% comment %} 처음 페이지로 이동 {% endcomment %}
+                {% if reports.number > 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="?page=1">&laquo; 처음</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ reports.previous_page_number }}">이전</a>
+                        <a class="page-link" href="?page=1">처음</a>
                     </li>
                 {% endif %}
-                
-                <li class="page-item active">
-                    <span class="page-link">
-                        {{ reports.number }} / {{ reports.paginator.num_pages }}
-                    </span>
-                </li>
-                
-                {% if reports.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ reports.next_page_number }}">다음</a>
+
+                {% comment %} 이전 블록으로 이동 (뷰에서 계산된 prev_block_start_page 사용) {% endcomment %}
+                {% if prev_block_start_page is not None %}
+                     <li class="page-item">
+                         <a class="page-link" href="?page={{ prev_block_start_page }}">이전</a>
                     </li>
+                {% endif %}
+
+                {% comment %} 현재 블록의 페이지 번호 나열 - 뷰에서 계산된 page_range 사용 {% endcomment %}
+                {% for num in page_range %}
+                    <li class="page-item {% if reports.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endfor %}
+
+                {% comment %} 다음 블록으로 이동 (뷰에서 계산된 next_block_start_page 사용) {% endcomment %}
+                {% if next_block_start_page is not None %}
+                     <li class="page-item">
+                         <a class="page-link" href="?page={{ next_block_start_page }}">다음</a>
+                     </li>
+                {% endif %}
+
+                {% comment %} 마지막 페이지로 이동 {% endcomment %}
+                {% if reports.number < reports.paginator.num_pages %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ reports.paginator.num_pages }}">마지막 &raquo;</a>
+                        <a class="page-link" href="?page={{ reports.paginator.num_pages }}">마지막</a>
                     </li>
                 {% endif %}
             </ul>

@@ -7,7 +7,8 @@ def shelter_list(request):
     """보호소 목록 페이지"""
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT careregno, carenm, careaddr, caretel
+        SELECT careregno, carenm, careaddr, caretel,
+               weekoprstime, weekopretime, weekendoprstime, weekendopretime
         FROM shelter
         ORDER BY carenm
     """)

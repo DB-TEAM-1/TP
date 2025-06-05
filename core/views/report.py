@@ -53,17 +53,41 @@ def report_list(request):
         ORDER BY r.date DESC
     """)
     
-    columns = [col[0] for col in cursor.description]
-    reports = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    reports = dictfetchall(cursor)
     
     # 페이지네이션
     paginator = Paginator(reports, 10)  # 페이지당 10개 항목
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
+    # 페이지네이션 블록 계산 (10개씩)
+    block_size = 10
+    current_block = (page_obj.number - 1) // block_size
+    start_page = current_block * block_size + 1
+    end_page = start_page + block_size - 1
+    
+    # 전체 페이지 수를 넘지 않도록 조정
+    if end_page > paginator.num_pages:
+        end_page = paginator.num_pages
+        
+    # 표시할 페이지 번호 목록 생성
+    page_range = range(start_page, end_page + 1)
+
+    # 이전/다음 블록의 시작 페이지 계산
+    prev_block_start_page = None
+    if current_block > 0:
+        prev_block_start_page = current_block * block_size - block_size + 1
+
+    next_block_start_page = None
+    if end_page < paginator.num_pages:
+        next_block_start_page = current_block * block_size + block_size + 1
+    
     return render(request, 'report/list.html', {
         'reports': page_obj,
-        'show_all_reports': True  # 모든 신고만 보이도록 표시
+        'page_range': page_range, # 현재 블록의 페이지 범위 전달
+        'prev_block_start_page': prev_block_start_page, # 이전 블록 시작 페이지 전달
+        'next_block_start_page': next_block_start_page, # 다음 블록 시작 페이지 전달
+        'show_all_reports': True
     })
 
 def report_create(request):
