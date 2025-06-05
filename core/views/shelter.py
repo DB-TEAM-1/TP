@@ -7,27 +7,51 @@ def shelter_list(request):
     """보호소 목록 페이지"""
     cursor = connection.cursor()
     
-    # 지역 목록 조회
+    # 모든 고유한 도/시 이름 조회
     cursor.execute("""
-        SELECT DISTINCT 
-            split_part(careaddr, ' ', 1) as province,
-            split_part(careaddr, ' ', 2) as city
+        SELECT DISTINCT split_part(careaddr, ' ', 1) as province
         FROM shelter
-        ORDER BY province, city
+        WHERE careaddr IS NOT NULL AND careaddr != ''
+        ORDER BY province
     """)
-    regions = dictfetchall(cursor)
+    all_provinces = [row['province'] for row in dictfetchall(cursor)]
     
-    # 지역 데이터 구조화
+    # 지역 데이터 구조화 및 특별자치도 통합
     region_data = {}
-    for region in regions:
-        province = region['province']
-        city = region['city']
-        if province not in region_data:
-            region_data[province] = []
-        if city:  # city가 비어있지 않은 경우에만 추가
-            region_data[province].append(city)
+    display_provinces = set() # 필터 드롭다운에 표시할 도 목록
 
-    print("Regional Data:", region_data) # 디버그 출력 추가
+    for province in all_provinces:
+        # 특별자치도 통합 처리
+        if province == '전북특별자치도':
+            display_province = '전라북도'
+        elif province == '강원특별자치도':
+             display_province = '강원도'
+        else:
+            display_province = province
+        
+        display_provinces.add(display_province)
+        
+        # 시/군/구 목록 조회 및 추가
+        cursor.execute("""
+            SELECT DISTINCT split_part(careaddr, ' ', 2) as city
+            FROM shelter
+            WHERE split_part(careaddr, ' ', 1) = %s
+              AND split_part(careaddr, ' ', 2) IS NOT NULL 
+              AND split_part(careaddr, ' ', 2) != ''
+            ORDER BY city
+        """, [province])
+        cities = [row['city'] for row in dictfetchall(cursor)]
+        
+        if display_province not in region_data:
+            region_data[display_province] = []
+            
+        # 중복 시/군/구 방지 및 추가
+        for city in cities:
+             if city not in region_data[display_province]:
+                 region_data[display_province].append(city)
+
+    # 필터 드롭다운에 표시할 도 목록 정렬
+    sorted_display_provinces = sorted(list(display_provinces))
 
     # 필터 적용
     params = []
@@ -42,38 +66,57 @@ def shelter_list(request):
         WHERE 1=1
     """
     
-    if request.GET.get('province'):
-        province = request.GET.get('province')
-        # 전라북도와 전북특별자치도, 강원도와 강원특별자치도 예외 처리
-        if province == '전라북도':
+    selected_province = request.GET.get('province', '')
+    selected_city = request.GET.get('city', '')
+
+    if selected_province:
+        # '강원도' 또는 '전라북도' 선택 시 특별자치도 포함하여 검색
+        if selected_province == '전라북도':
             query += " AND (s.careaddr LIKE %s OR s.careaddr LIKE %s)"
             params.append('전라북도 %')
             params.append('전북특별자치도 %')
-        elif province == '강원도':
+        elif selected_province == '강원도':
             query += " AND (s.careaddr LIKE %s OR s.careaddr LIKE %s)"
             params.append('강원도 %')
             params.append('강원특별자치도 %')
         else:
+            # 그 외 일반적인 도/시 검색
             query += " AND s.careaddr LIKE %s"
-            params.append(f"{province}%")
+            params.append(f"{selected_province}%")
         
-        if request.GET.get('city'):
+        if selected_city:
              # 시/군/구 필터는 도/시 필터가 적용된 후에만 유효
-            city = request.GET.get('city')
-            # 기존 도/시 필터 조건에 추가하여 시/군/구 필터 적용
-            if province in ['전라북도', '강원도']:
+            if selected_province in ['전라북도', '강원도']:
                  # 전라/강원 특별자치도 포함하여 시/군/구 검색
-                 query += " AND (s.careaddr LIKE %s OR s.careaddr LIKE %s)"
-                 params.append(f"{province} {city}%")
-                 # 특별자치도 이름으로도 검색
-                 if province == '전라북도':
-                     params.append(f"전북특별자치도 {city}%")
-                 elif province == '강원도':
-                     params.append(f"강원특별자치도 {city}%")
+                 # 기존 도 필터 조건에 추가하여 시/군/구 필터 적용
+                 # 예: 전라북도 전주시 -> 전라북도 전주시%, 전북특별자치도 전주시%
+                 current_province_condition_index = len(params) - (2 if selected_province in ['전라북도', '강원도'] else 1)
+                 current_province_condition = query.split(" AND ")[1 + (1 if request.GET.get('search') else 0) + (1 if request.GET.get('province') else 0) ].strip() # 현재 도 필터 조건 문자열 찾기 - 복잡해지므로 다른 방법 고려 필요
+
+                 # 간소화된 시/군/구 필터링 로직: 선택된 도/특별자치도와 선택된 시를 모두 포함하는 주소 검색
+                 city_filter_condition = ""
+                 city_params = []
+                 
+                 city_filter_condition += " AND (s.careaddr LIKE %s"
+                 city_params.append(f"{selected_province} {selected_city}%")
+
+                 # 특별자치도 이름으로도 검색 조건 추가
+                 if selected_province == '전라북도':
+                     city_filter_condition += " OR s.careaddr LIKE %s"
+                     city_params.append(f"전북특별자치도 {selected_city}%")
+                 elif selected_province == '강원도':
+                     city_filter_condition += " OR s.careaddr LIKE %s"
+                     city_params.append(f"강원특별자치도 {selected_city}%")
+
+                 city_filter_condition += ")"
+                 query += city_filter_condition
+                 params.extend(city_params)
+
             else:
-                 # 일반적인 도/시 검색에 시/군/구 추가
+                 # 그 외 일반적인 도/시 검색에 시/군/구 추가
                  query += " AND s.careaddr LIKE %s"
-                 params.append(f"{province} {city}%")
+                 params.append(f"{selected_province} {selected_city}%")
+
 
     if request.GET.get('search'):
         query += " AND (s.carenm LIKE %s OR s.careaddr LIKE %s)"
@@ -92,7 +135,11 @@ def shelter_list(request):
     
     context = {
         'shelters': page_obj,
-        'region_data': region_data # 지역 정보 전달
+        'region_data': region_data, # 지역 정보 전달
+        'display_provinces': sorted_display_provinces, # 필터 드롭다운에 표시할 도 목록
+        'selected_province': selected_province,
+        'selected_city': selected_city,
+        'search_term': request.GET.get('search', '')
     }
     
     return render(request, 'shelter/list.html', context)
@@ -152,8 +199,18 @@ def shelter_search(request):
         params.append(f'%{name}%')
     
     if region:
-        query += " AND careaddr LIKE %s"
-        params.append(f'%{region}%')
+        # '강원도' 또는 '전라북도' 검색 시 특별자치도 포함
+        if region == '전라북도':
+             query += " AND (careaddr LIKE %s OR careaddr LIKE %s)"
+             params.append('전라북도 %')
+             params.append('전북특별자치도 %')
+        elif region == '강원도':
+             query += " AND (careaddr LIKE %s OR careaddr LIKE %s)"
+             params.append('강원도 %')
+             params.append('강원특별자치도 %')
+        else:
+             query += " AND careaddr LIKE %s"
+             params.append(f'{region}%')
     
     query += " ORDER BY carenm"
     
