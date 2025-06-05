@@ -56,6 +56,19 @@
         background-color: #007bff;
         border-color: #007bff;
     }
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+    .filter-section .form-group {
+        margin-bottom: 1rem;
+    }
+    .filter-section label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
 </style>
 {% endblock %}
 
@@ -82,6 +95,63 @@
                 {% endif %}
             </div>
         </div>
+    </div>
+
+    <!-- 필터 섹션 -->
+    <div class="filter-section">
+        <form method="get" class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="shelter">보호소</label>
+                    <select name="shelter" id="shelter" class="form-select">
+                        <option value="">전체</option>
+                        {% for shelter in shelters %}
+                            <option value="{{ shelter }}" {% if selected_shelter == shelter %}selected{% endif %}>
+                                {{ shelter }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="animal">동물 종류</label>
+                    <select name="animal" id="animal" class="form-select">
+                        <option value="">전체</option>
+                        {% for animal in animals %}
+                            <option value="{{ animal }}" {% if selected_animal == animal %}selected{% endif %}>
+                                {{ animal }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="rating">별점</label>
+                    <select name="rating" id="rating" class="form-select">
+                        <option value="">전체</option>
+                        {% for rating in ratings %}
+                            <option value="{{ rating }}" {% if selected_rating == rating|stringformat:"i" %}selected{% endif %}>
+                                {% with ''|center:rating as range %}
+                                {% for _ in range %}★{% endfor %}
+                                {% endwith %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="date">날짜</label>
+                    <input type="date" name="date" id="date" class="form-control" value="{{ selected_date }}">
+                </div>
+            </div>
+            <div class="col-12 mt-3">
+                <button type="submit" class="btn btn-primary">필터 적용</button>
+                <a href="{% url 'review_list' %}" class="btn btn-secondary">초기화</a>
+            </div>
+        </form>
     </div>
 
     <div class="row row-cols-1 row-cols-md-3 g-4">
