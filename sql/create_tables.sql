@@ -146,3 +146,24 @@ LEFT JOIN
     animal a ON rv.desertionNo = a.desertionNo
 LEFT JOIN
     shelter s ON rv.careregno = s.careregno; 
+
+-- Trigger function to update animal status when adoption status becomes '완료됨'
+CREATE OR REPLACE FUNCTION update_animal_status_on_adoption_complete()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- adoption 테이블의 status가 '완료됨'으로 변경되었을 때만 작동
+    IF NEW.status = '완료됨' AND OLD.status != '완료됨' THEN
+        -- 해당 desertionNo를 가진 animal 테이블의 processState를 '완료됨'으로 업데이트
+        UPDATE animal
+        SET processState = '완료됨'
+        WHERE desertionNo = NEW.desertionNo;
+    END IF;
+    RETURN NEW; -- UPDATE 문이므로 NEW 레코드를 반환해야 합니다.
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger definition for adoption status change
+CREATE TRIGGER adoption_status_change_trigger
+AFTER UPDATE OF status ON adoption
+FOR EACH ROW
+EXECUTE FUNCTION update_animal_status_on_adoption_complete(); 
