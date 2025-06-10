@@ -12,7 +12,7 @@ def review_list(request):
             SELECT 
                 r.review_id, r.rating, r.comment, r.image_url, r.created_at,
                 u.name as user_name,
-                a.kindnm, a.popfile1, a.desertionno,
+                a.kindnm, a.desertionno,
                 s.carenm as shelter_name
             FROM review r
             JOIN users u ON r.user_num = u.user_num
@@ -43,6 +43,11 @@ def review_list(request):
         
         cursor.execute(query, params)
         reviews = dictfetchall(cursor)
+        
+        # DEBUG: Fetch된 review 데이터 출력
+        print("DEBUG: Fetched reviews data in review_list:")
+        for review in reviews:
+            print(review)
         
         # 필터 옵션 조회
         cursor.execute("""
@@ -180,7 +185,7 @@ def review_detail(request, review_id):
             SELECT 
                 r.review_id, r.rating, r.comment, r.image_url, r.created_at, r.user_num,
                 u.name as user_name,
-                a.kindnm, a.popfile1, a.desertionno,
+                a.kindnm, a.desertionno,
                 s.carenm as shelter_name
             FROM review r
             JOIN users u ON r.user_num = u.user_num
@@ -233,7 +238,7 @@ def review_edit(request, review_id):
     with connection.cursor() as cursor:
         # 기존 후기 정보 조회
         cursor.execute("""
-            SELECT r.*, u.name as user_name, a.kindnm, a.popfile1, a.desertionno
+            SELECT r.*, u.name as user_name, a.kindnm, a.desertionno
             FROM review r
             JOIN users u ON r.user_num = u.user_num
             JOIN animal a ON r.desertionno = a.desertionno
@@ -253,7 +258,39 @@ def review_edit(request, review_id):
         if request.method == 'POST':
             rating = request.POST.get('rating')
             comment = request.POST.get('comment')
-            image_url = request.POST.get('image_url', '')
+            image = request.FILES.get('image_url')  # 파일 업로드로 변경
+            delete_image = request.POST.get('delete_image')
+
+            # 기존 사진 삭제를 체크한 경우에는 새 파일 첨부가 필수
+            if delete_image:
+                if not image:
+                    messages.error(request, '사진을 삭제하려면 새 사진을 첨부해야 합니다.')
+                    return redirect('review_edit', review_id=review_id)
+                # 기존 이미지 삭제
+                if review['image_url']:
+                    import os
+                    from django.conf import settings
+                    file_path = os.path.join(settings.MEDIA_ROOT, review['image_url'])
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                # 새 이미지 저장
+                from django.core.files.storage import FileSystemStorage
+                fs = FileSystemStorage()
+                from datetime import datetime
+                filename = f"review_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{image.name}"
+                image_path = fs.save(f'reviews/{filename}', image)
+                new_image_url = image_path
+            else:
+                # 기존 사진 삭제를 체크하지 않은 경우에는 새 파일이 없어도 됨
+                if image:
+                    from django.core.files.storage import FileSystemStorage
+                    fs = FileSystemStorage()
+                    from datetime import datetime
+                    filename = f"review_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{image.name}"
+                    image_path = fs.save(f'reviews/{filename}', image)
+                    new_image_url = image_path
+                else:
+                    new_image_url = review['image_url']
 
             if not rating or not comment:
                 messages.error(request, '별점과 후기 내용을 모두 입력해주세요.')
@@ -264,7 +301,7 @@ def review_edit(request, review_id):
                 UPDATE review
                 SET rating = %s, comment = %s, image_url = %s
                 WHERE review_id = %s
-            """, [rating, comment, image_url, review_id])
+            """, [rating, comment, new_image_url, review_id])
 
             messages.success(request, '후기가 성공적으로 수정되었습니다.')
             return redirect('review_detail', review_id=review_id)

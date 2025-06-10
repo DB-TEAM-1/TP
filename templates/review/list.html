@@ -160,11 +160,13 @@
                 <div class="card review-card">
                     <div class="card-img-container">
                         {% if review.image_url %}
-                            <img src="{{ review.image_url }}" class="card-img-top" alt="후기 이미지">
-                        {% elif review.popfile1 %}
-                            <img src="{{ review.popfile1 }}" class="card-img-top" alt="{{ review.kindnm }}">
+                            {% if review.image_url|slice:':4' == 'http' %}
+                                <img src="{{ review.image_url }}" alt="후기 이미지" style="max-width:200px;">
+                            {% else %}
+                                <img src="/media/{{ review.image_url }}" alt="후기 이미지" style="max-width:200px;">
+                            {% endif %}
                         {% else %}
-                            <img src="/static/images/no-image.jpg" class="card-img-top" alt="이미지 없음">
+                            <img src="/static/images/no-image.jpg" alt="후기 이미지" style="max-width:200px;">
                         {% endif %}
                     </div>
                     <div class="card-body">

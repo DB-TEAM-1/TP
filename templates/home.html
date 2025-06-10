@@ -113,11 +113,11 @@
                 <div class="review-item">
                     <div class="d-flex gap-3">
                         {% if review.image_url %}
-                            <img src="{{ review.image_url }}" class="review-image" alt="후기 이미지">
-                        {% elif review.popfile1 %}
-                            <img src="{{ review.popfile1 }}" class="review-image" alt="동물 이미지">
-                        {% else %}
-                            <img src="/static/images/no-image.jpg" class="review-image" alt="이미지 없음">
+                            {% if review.image_url|slice:':4' == 'http' %}
+                                <img src="{{ review.image_url }}" class="review-image" alt="동물 이미지">
+                            {% else %}
+                                <img src="/media/{{ review.image_url }}" class="review-image" alt="동물 이미지">
+                            {% endif %}
                         {% endif %}
                         <div class="flex-grow-1">
                             <div class="rating">

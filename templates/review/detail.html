@@ -42,11 +42,13 @@
 
                     <div class="text-center mb-4">
                         {% if review.image_url %}
-                            <img src="{{ review.image_url }}" class="img-fluid rounded" alt="후기 이미지" 
-                                 style="max-height: 400px; object-fit: contain;">
-                        {% elif review.popfile1 %}
-                            <img src="{{ review.popfile1 }}" class="img-fluid rounded" alt="{{ review.kindnm }}" 
-                                 style="max-height: 400px; object-fit: contain;">
+                            {% if review.image_url|slice:':4' == 'http' %}
+                                <img src="{{ review.image_url }}" alt="후기 이미지" style="max-width:400px;">
+                            {% else %}
+                                <img src="/media/{{ review.image_url }}" alt="후기 이미지" style="max-width:400px;">
+                            {% endif %}
+                        {% else %}
+                            <img src="/static/images/no-image.jpg" alt="후기 이미지" style="max-width:400px;">
                         {% endif %}
                     </div>
 

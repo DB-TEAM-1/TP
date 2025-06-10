@@ -71,7 +71,7 @@ CREATE TABLE "report" (
     location VARCHAR(100) NOT NULL,
     kindNm VARCHAR(30) NOT NULL, -- estimated_kind VARCHAR(50) NOT NULL -> kindNm VARCHAR(30) NOT NULL
     sexCd VARCHAR(1) NOT NULL, -- sex_cd -> sexCd
-    popfile1 TEXT NOT NULL, -- image_url -> popfile1
+    image_url TEXT NOT NULL, -- popfile1 -> image_url
     status VARCHAR(20) NOT NULL,
     description TEXT NOT NULL
 );

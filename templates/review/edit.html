@@ -44,7 +44,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title mb-4">후기 수정</h5>
-                    <form method="post" id="reviewEditForm">
+                    <form method="post" id="reviewEditForm" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label class="form-label">별점</label>
@@ -62,8 +62,21 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="image_url" class="form-label">이미지 URL (선택사항)</label>
-                            <input type="url" class="form-control" id="image_url" name="image_url" placeholder="http://" value="{{ review.image_url|default:'' }}">
+                            <label for="image_url" class="form-label">사진 첨부 <span class="text-danger">*</span></label>
+                            {% if review.image_url %}
+                                {% if review.image_url|slice:':4' == 'http' %}
+                                    <img src="{{ review.image_url }}" alt="기존 이미지" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                                {% else %}
+                                    <img src="/media/{{ review.image_url }}" alt="기존 이미지" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                                {% endif %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="delete_image" name="delete_image">
+                                    <label class="form-check-label" for="delete_image">기존 사진 삭제</label>
+                                </div>
+                            {% else %}
+                                <img src="/static/images/no-image.jpg" alt="기존 이미지" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                            {% endif %}
+                            <input type="file" class="form-control" id="image_url" name="image_url" accept="image/*">
                         </div>
                         <div class="mb-3">
                             <label for="comment" class="form-label">후기 내용</label>
@@ -134,6 +147,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
     });
+
+    const deleteCheckbox = document.getElementById('delete_image');
+    const fileInput = document.getElementById('image_url');
+    if (deleteCheckbox && fileInput) {
+        function toggleRequired() {
+            if (deleteCheckbox.checked) {
+                fileInput.required = true;
+            } else {
+                fileInput.required = false;
+            }
+        }
+        deleteCheckbox.addEventListener('change', toggleRequired);
+        toggleRequired();
+    }
 });
 </script>
 {% endblock %}

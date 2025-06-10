@@ -14,7 +14,7 @@ def my_report_list(request):
     
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name,
+        SELECT r.report_id, r.kindnm, r.sexcd, r.location, r.description, r.image_url, r.status, u.name as reporter_name, s.carenm as shelter_name,
                TO_CHAR(r.date, 'YYYY-MM-DD HH24:MI') as formatted_date
         FROM report r
         LEFT JOIN users u ON r.user_num = u.user_num
@@ -26,6 +26,10 @@ def my_report_list(request):
     columns = [col[0] for col in cursor.description]
     reports = [dict(zip(columns, row)) for row in cursor.fetchall()]
     
+    # 디버깅을 위해 각 신고의 image_url 출력
+    for report in reports:
+        print(f"DEBUG: Report ID: {report.get('report_id')}, Image URL: {report.get('image_url')}")
+
     # 페이지네이션
     paginator = Paginator(reports, 10)  # 페이지당 10개 항목
     page_number = request.GET.get('page', 1)
@@ -43,11 +47,12 @@ def report_list(request):
             r.sexcd,
             r.location,
             r.description,
-            r.popfile1 as image_url,
+            r.image_url,
             r.date, -- date 필드 그대로 가져옴
             r.status,
             u.name as reporter_name,
-            s.carenm as shelter_name
+            s.carenm as shelter_name,
+            TO_CHAR(r.date, 'YYYY-MM-DD HH24:MI') as formatted_date
         FROM report r
         LEFT JOIN users u ON r.user_num = u.user_num
         LEFT JOIN shelter s ON r.careregno = s.careregno
@@ -214,7 +219,7 @@ def report_create(request):
             cursor.execute("""
                 INSERT INTO report (
                     user_num, careregno, date,
-                    location, kindnm, sexcd, popfile1,
+                    location, kindnm, sexcd, image_url,
                     status, description
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s

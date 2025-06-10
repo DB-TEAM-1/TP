@@ -108,7 +108,8 @@
                         </div>
                         <div class="mb-3">
                             <label for="image_url" class="form-label">사진 첨부 <span class="text-danger">*</span></label>
-                            <input type="file" class="form-control" id="image_url" name="image_url" accept="image/*" required>
+                            <input type="file" class="form-control" id="image_url" name="image_url" accept="image/*" required onchange="previewImage(event)">
+                            <div id="imagePreview" class="mt-2"></div>
                         </div>
                         <div class="mb-3">
                             <label for="comment" class="form-label">후기 내용</label>
@@ -171,6 +172,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function previewImage(event) {
+    const input = event.target;
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.maxWidth = '200px';
+            img.style.maxHeight = '200px';
+            img.style.borderRadius = '8px';
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 </script>
 {% endblock %}
 
