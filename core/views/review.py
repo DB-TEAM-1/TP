@@ -9,37 +9,30 @@ def review_list(request):
     with connection.cursor() as cursor:
         # 기본 쿼리
         query = """
-            SELECT 
-                r.review_id, r.rating, r.comment, r.image_url, r.created_at,
-                u.name as user_name,
-                a.kindnm, a.desertionno,
-                s.carenm as shelter_name
-            FROM review r
-            JOIN users u ON r.user_num = u.user_num
-            JOIN animal a ON r.desertionno = a.desertionno
-            JOIN shelter s ON r.careregno = s.careregno
+            SELECT *
+            FROM review_full_info
             WHERE 1=1
         """
         params = []
         
         # 필터 적용
         if request.GET.get('shelter'):
-            query += " AND s.carenm = %s"
+            query += " AND shelter_name = %s"
             params.append(request.GET['shelter'])
         
         if request.GET.get('animal'):
-            query += " AND a.kindnm = %s"
+            query += " AND kindcd = %s"
             params.append(request.GET['animal'])
         
         if request.GET.get('rating'):
-            query += " AND r.rating = %s"
+            query += " AND rating = %s"
             params.append(request.GET['rating'])
         
         if request.GET.get('date'):
-            query += " AND DATE(r.created_at) = %s"
+            query += " AND DATE(date) = %s"
             params.append(request.GET['date'])
         
-        query += " ORDER BY r.created_at DESC"
+        query += " ORDER BY date DESC"
         
         cursor.execute(query, params)
         reviews = dictfetchall(cursor)
@@ -51,18 +44,16 @@ def review_list(request):
         
         # 필터 옵션 조회
         cursor.execute("""
-            SELECT DISTINCT s.carenm as shelter_name
-            FROM review r
-            JOIN shelter s ON r.careregno = s.careregno
-            ORDER BY s.carenm
+            SELECT DISTINCT shelter_name
+            FROM review_full_info
+            ORDER BY shelter_name
         """)
         shelters = [row['shelter_name'] for row in dictfetchall(cursor)]
         
         cursor.execute("""
-            SELECT DISTINCT a.kindnm
-            FROM review r
-            JOIN animal a ON r.desertionno = a.desertionno
-            ORDER BY a.kindnm
+            SELECT DISTINCT kindnm
+            FROM review_full_info
+            ORDER BY kindnm
         """)
         animals = [row['kindnm'] for row in dictfetchall(cursor)]
         
@@ -182,16 +173,9 @@ def review_create(request, desertion_no):
 def review_detail(request, review_id):
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT 
-                r.review_id, r.rating, r.comment, r.image_url, r.created_at, r.user_num,
-                u.name as user_name,
-                a.kindnm, a.desertionno,
-                s.carenm as shelter_name
-            FROM review r
-            JOIN users u ON r.user_num = u.user_num
-            JOIN animal a ON r.desertionno = a.desertionno
-            JOIN shelter s ON r.careregno = s.careregno
-            WHERE r.review_id = %s
+            SELECT *
+            FROM review_full_info
+            WHERE review_id = %s
         """, [review_id])
         review = dictfetchone(cursor)
         

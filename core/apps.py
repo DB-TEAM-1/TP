@@ -8,6 +8,11 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
+        # Ensures database initialization runs only once during development server startup.
+        # The `RUN_MAIN` environment variable is set by Django when the auto-reloader process is the main process.
+        if os.environ.get('RUN_MAIN', None) != 'true':
+            return
+            
         try:
             with connection.cursor() as cursor:
                 # Get the absolute path to the SQL directory

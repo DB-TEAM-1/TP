@@ -1,4 +1,6 @@
 -- Drop tables if they exist
+DROP VIEW IF EXISTS review_full_info CASCADE;
+DROP VIEW IF EXISTS report_full_info CASCADE;
 DROP TABLE IF EXISTS "review";
 DROP TABLE IF EXISTS "adoption";
 DROP TABLE IF EXISTS "report";
@@ -96,4 +98,51 @@ CREATE TABLE "review" (
     image_url TEXT NOT NULL,
     comment TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-); 
+);
+
+-- Create report_full_info View
+CREATE VIEW report_full_info AS
+SELECT
+    r.report_id,
+    r.user_num,
+    r.careregno,
+    r.date,
+    TO_CHAR(r.date, 'YYYY-MM-DD HH24:MI') as formatted_date,
+    r.location,
+    r.kindnm,
+    r.sexcd,
+    r.image_url,
+    r.status,
+    r.description,
+    u.name as reporter_name,
+    s.carenm as shelter_name
+FROM
+    report r
+LEFT JOIN
+    users u ON r.user_num = u.user_num
+LEFT JOIN
+    shelter s ON r.careregno = s.careregno;
+
+-- Create review_full_info View
+CREATE VIEW review_full_info AS
+SELECT
+    rv.review_id,
+    rv.user_num,
+    rv.desertionNo,
+    rv.comment,
+    rv.image_url,
+    rv.created_at as date,
+    TO_CHAR(rv.created_at, 'YYYY-MM-DD HH24:MI') as formatted_date,
+    rv.rating,
+    u.name as reviewer_name,
+    a.kindnm,
+    a.popfile1 as animal_image_url,
+    s.carenm as shelter_name
+FROM
+    review rv
+LEFT JOIN
+    users u ON rv.user_num = u.user_num
+LEFT JOIN
+    animal a ON rv.desertionNo = a.desertionNo
+LEFT JOIN
+    shelter s ON rv.careregno = s.careregno; 

@@ -14,13 +14,10 @@ def my_report_list(request):
     
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT r.report_id, r.kindnm, r.sexcd, r.location, r.description, r.image_url, r.status, u.name as reporter_name, s.carenm as shelter_name,
-               TO_CHAR(r.date, 'YYYY-MM-DD HH24:MI') as formatted_date
-        FROM report r
-        LEFT JOIN users u ON r.user_num = u.user_num
-        LEFT JOIN shelter s ON r.careregno = s.careregno
-        WHERE r.user_num = %s
-        ORDER BY r.date DESC
+        SELECT *
+        FROM report_full_info
+        WHERE user_num = %s
+        ORDER BY date DESC
     """, [request.session['user']['user_num']])
     
     columns = [col[0] for col in cursor.description]
@@ -41,22 +38,9 @@ def report_list(request):
     """신고 목록 페이지"""
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT 
-            r.report_id,
-            r.kindnm,
-            r.sexcd,
-            r.location,
-            r.description,
-            r.image_url,
-            r.date, -- date 필드 그대로 가져옴
-            r.status,
-            u.name as reporter_name,
-            s.carenm as shelter_name,
-            TO_CHAR(r.date, 'YYYY-MM-DD HH24:MI') as formatted_date
-        FROM report r
-        LEFT JOIN users u ON r.user_num = u.user_num
-        LEFT JOIN shelter s ON r.careregno = s.careregno
-        ORDER BY r.date DESC
+        SELECT *
+        FROM report_full_info
+        ORDER BY date DESC
     """)
     
     reports = dictfetchall(cursor)
@@ -262,12 +246,9 @@ def report_detail(request, report_id):
     # 신고 정보 조회
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT r.*, u.name as reporter_name, s.carenm as shelter_name,
-               r.date
-        FROM report r
-        LEFT JOIN users u ON r.user_num = u.user_num
-        LEFT JOIN shelter s ON r.careregno = s.careregno
-        WHERE r.report_id = %s
+        SELECT *
+        FROM report_full_info
+        WHERE report_id = %s
     """, [report_id])
     
     columns = [col[0] for col in cursor.description]
