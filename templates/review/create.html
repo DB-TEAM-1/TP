@@ -89,7 +89,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title mb-4">후기 작성</h5>
-                    <form method="post" action="{% url 'review_create' desertion_no=animal.desertionno %}" id="reviewForm">
+                    <form method="post" action="{% url 'review_create' desertion_no=animal.desertionno %}" id="reviewForm" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label class="form-label">별점</label>
@@ -107,8 +107,8 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="image_url" class="form-label">이미지 URL (선택사항)</label>
-                            <input type="url" class="form-control" id="image_url" name="image_url" placeholder="http://">
+                            <label for="image_url" class="form-label">사진 첨부 <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="image_url" name="image_url" accept="image/*" required>
                         </div>
                         <div class="mb-3">
                             <label for="comment" class="form-label">후기 내용</label>

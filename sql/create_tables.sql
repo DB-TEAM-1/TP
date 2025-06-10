@@ -93,7 +93,7 @@ CREATE TABLE "review" (
     desertionNo VARCHAR(20) REFERENCES "animal"(desertionNo) ON DELETE CASCADE,
     careRegNo VARCHAR(50) REFERENCES "shelter"(careRegNo) ON DELETE CASCADE,
     rating INTEGER NOT NULL,
-    image_url TEXT,
+    image_url TEXT NOT NULL,
     comment TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ); 

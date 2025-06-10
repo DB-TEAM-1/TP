@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.db import connection
 from django.core.paginator import Paginator
 from datetime import datetime
+from django.core.files.storage import FileSystemStorage
 
 def review_list(request):
     with connection.cursor() as cursor:
@@ -124,16 +125,22 @@ def review_create(request, desertion_no):
             
             rating = request.POST.get('rating')
             comment = request.POST.get('comment')
-            image_url = request.POST.get('image_url', '')  # 선택적 필드
+            image = request.FILES.get('image_url')  # 파일 업로드로 변경
             
-            if not rating or not comment:
-                messages.error(request, '별점과 후기 내용을 모두 입력해주세요.')
+            if not rating or not comment or not image:
+                messages.error(request, '별점, 후기 내용, 사진을 모두 입력(첨부)해주세요.')
                 return redirect('review_create', desertion_no=desertion_no)
+            
+            # 이미지 파일 저장
+            fs = FileSystemStorage()
+            import os
+            filename = f"review_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{image.name}"
+            image_path = fs.save(f'reviews/{filename}', image)
             
             # 후기 등록
             cursor.execute("""
                 INSERT INTO review (
-                    user_num, desertionno, careregno, rating, image_url, comment, created_at
+                    user_num, desertionno, careRegNo, rating, image_url, comment, created_at
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s, NOW()
                 )
@@ -142,7 +149,7 @@ def review_create(request, desertion_no):
                 desertion_no,
                 adoption['careregno'],
                 rating,
-                image_url,
+                image_path,
                 comment
             ])
             
