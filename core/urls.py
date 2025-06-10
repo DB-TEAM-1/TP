@@ -34,4 +34,6 @@ urlpatterns = [
     path('reviews/', review.review_list, name='review_list'),
     path('reviews/create/<str:desertion_no>/', review.review_create, name='review_create'),
     path('reviews/<int:review_id>/', review.review_detail, name='review_detail'),
+    path('reviews/<int:review_id>/edit/', review.review_edit, name='review_edit'),
+    path('reviews/<int:review_id>/delete/', review.review_delete, name='review_delete'),
 ]

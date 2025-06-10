@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.db import connection
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.urls import reverse
 from django.contrib import messages
 from datetime import datetime
@@ -160,6 +160,8 @@ def adoption_list(request):
         messages.error(request, '로그인이 필요한 서비스입니다.')
         return redirect('login')
     
+    user_num = request.session['user']['user_num']
+
     with connection.cursor() as cursor:
         # 현재 로그인한 사용자의 입양 신청 목록 조회
         cursor.execute("""
@@ -171,8 +173,22 @@ def adoption_list(request):
             JOIN shelter s ON a.careregno = s.careregno
             WHERE a.user_num = %s
             ORDER BY a.applied_at DESC
-        """, [request.session['user']['user_num']])
+        """, [user_num])
         adoptions = dictfetchall(cursor)
+
+        # 각 입양 건에 대해 후기 작성 여부 확인
+        for adoption in adoptions:
+            cursor.execute("""
+                SELECT review_id FROM review
+                WHERE user_num = %s AND desertionno = %s
+            """, [user_num, adoption['desertionno']])
+            existing_review = cursor.fetchone()
+            if existing_review:
+                adoption['has_review'] = True
+                adoption['review_id'] = existing_review[0] # review_id 추가
+            else:
+                adoption['has_review'] = False
+                adoption['review_id'] = None
     
     return render(request, 'animal/adoption_list.html', {'adoptions': adoptions})
 

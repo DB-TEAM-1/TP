@@ -4,29 +4,36 @@
 
 {% block extra_css %}
 <style>
-    .rating {
-        color: #ffc107;
-        font-size: 1.5rem;
+    .star-rating {
         display: flex;
         flex-direction: row-reverse;
+        font-size: 1.5em;
         justify-content: flex-end;
     }
-    .rating input[type="radio"] {
+    .star-rating input {
         display: none;
     }
-    .rating label {
+    .star-rating label {
+        color: #ddd;
         cursor: pointer;
         padding: 0 0.1em;
     }
-    .rating label:hover,
-    .rating label:hover ~ label,
-    .rating input[type="radio"]:checked ~ label {
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input:checked ~ label {
         color: #ffc107;
     }
-    .rating label:hover > i,
-    .rating label:hover ~ label > i,
-    .rating input[type="radio"]:checked ~ label > i {
-        content: "\F586";
+    .star-rating label i {
+        font-size: 1.2em;
+    }
+    .review-completed {
+        text-align: center;
+        padding: 2rem;
+    }
+    .review-completed i {
+        font-size: 4rem;
+        color: #28a745;
+        margin-bottom: 1rem;
     }
 </style>
 {% endblock %}
@@ -62,18 +69,41 @@
                 </div>
             </div>
 
+            {% if existing_review %}
+            <div class="card">
+                <div class="card-body review-completed">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <h4 class="mb-3">이미 후기를 작성하셨습니다</h4>
+                    <p class="text-muted mb-4">이 동물에 대한 후기는 이미 작성하셨습니다.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'review_list' %}" class="btn btn-primary">
+                            <i class="bi bi-list"></i> 후기 목록 보기
+                        </a>
+                        <a href="{% url 'review_detail' existing_review.review_id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> 내 후기 보기
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title mb-4">후기 작성</h5>
-                    <form method="post" action="{% url 'review_create' desertion_no=animal.desertionno %}">
+                    <form method="post" action="{% url 'review_create' desertion_no=animal.desertionno %}" id="reviewForm">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label class="form-label">별점</label>
-                            <div class="rating">
-                                {% for i in "54321"|make_list %}
-                                    <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}">
-                                    <label for="star{{ i }}"><i class="bi bi-star"></i></label>
-                                {% endfor %}
+                            <div class="star-rating">
+                                <input type="radio" id="star5" name="rating" value="5">
+                                <label for="star5"><i class="bi bi-star-fill"></i></label>
+                                <input type="radio" id="star4" name="rating" value="4">
+                                <label for="star4"><i class="bi bi-star-fill"></i></label>
+                                <input type="radio" id="star3" name="rating" value="3">
+                                <label for="star3"><i class="bi bi-star-fill"></i></label>
+                                <input type="radio" id="star2" name="rating" value="2">
+                                <label for="star2"><i class="bi bi-star-fill"></i></label>
+                                <input type="radio" id="star1" name="rating" value="1">
+                                <label for="star1"><i class="bi bi-star-fill"></i></label>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -95,97 +125,52 @@
                     </form>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const ratingContainer = document.querySelector('.rating');
-        const ratingInputs = ratingContainer.querySelectorAll('input[type="radio"]');
-        const ratingLabels = ratingContainer.querySelectorAll('label');
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('reviewForm');
+    if (form) {  // 폼이 존재하는 경우에만 이벤트 리스너 추가
+        const ratingInputs = document.querySelectorAll('input[name="rating"]');
+        const labels = document.querySelectorAll('.star-rating label');
 
-        // 별점 초기화
-        function resetStars() {
-            ratingLabels.forEach(label => {
-                label.innerHTML = '<i class="bi bi-star"></i>';
-            });
-        }
-
-        // 특정 별점까지 채우기
-        function fillStars(rating) {
-            resetStars();
-            for (let i = 4; i >= 5 - rating; i--) {
-                ratingLabels[i].innerHTML = '<i class="bi bi-star-fill"></i>';
-            }
-        }
-
-        // 별점 선택 이벤트
+        // 별점 선택 시 이벤트
         ratingInputs.forEach((input, index) => {
             input.addEventListener('change', function() {
-                fillStars(this.value);
+                // 선택된 별점 이전의 모든 별을 채움
+                labels.forEach((label, i) => {
+                    if (i >= index) {
+                        label.style.color = '#ffc107';
+                    } else {
+                        label.style.color = '#ddd';
+                    }
+                });
             });
         });
 
-        // 마우스 오버 이벤트
-        ratingLabels.forEach((label, index) => {
-            label.addEventListener('mouseover', function() {
-                fillStars(5 - index);
-            });
+        // 폼 제출 전 유효성 검사
+        form.addEventListener('submit', function(e) {
+            const selectedRating = document.querySelector('input[name="rating"]:checked');
+            const comment = document.getElementById('comment').value.trim();
 
-            label.addEventListener('mouseout', function() {
-                const selectedRating = ratingContainer.querySelector('input[type="radio"]:checked');
-                if (selectedRating) {
-                    fillStars(selectedRating.value);
-                } else {
-                    resetStars();
-                }
-            });
-            
-            // 별점 레이블 클릭 이벤트 추가
-            label.addEventListener('click', function() {
-                const ratingValue = 5 - index; // 클릭한 별점에 해당하는 값 (5, 4, 3, 2, 1)
-                const targetInputId = 'star' + ratingValue;
-                const targetInput = document.getElementById(targetInputId);
-                
-                console.log(`Clicked label for rating: ${ratingValue}, target input ID: ${targetInputId}`); // 디버그 출력 1
+            if (!selectedRating) {
+                e.preventDefault();
+                alert('별점을 선택해주세요.');
+                return;
+            }
 
-                if (targetInput) {
-                    targetInput.checked = true; // 해당 라디오 버튼을 checked 상태로 만듦
-                    console.log(`Target input ${targetInputId} checked: ${targetInput.checked}`); // 디버그 출력 2
-                    
-                    // 라디오 버튼의 change 이벤트를 강제로 발생시켜 별 모양 업데이트
-                    const changeEvent = new Event('change');
-                    targetInput.dispatchEvent(changeEvent);
-                    
-                    console.log(`Dispatched change event for ${targetInputId}`); // 디버그 출력 3
-
-                } else {
-                    console.log(`Target input with ID ${targetInputId} not found`); // 디버그 출력 4
-                }
-            });
+            if (!comment) {
+                e.preventDefault();
+                alert('후기 내용을 입력해주세요.');
+                return;
+            }
         });
-
-    });
-
-    // 폼 제출 전 유효성 검사
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const rating = document.querySelector('input[name="rating"]:checked');
-        const comment = document.querySelector('#comment').value.trim();
-
-        if (!rating) {
-            e.preventDefault();
-            alert('별점을 선택해주세요.');
-            return;
-        }
-
-        if (!comment) {
-            e.preventDefault();
-            alert('후기 내용을 입력해주세요.');
-            return;
-        }
-    });
+    }
+});
 </script>
 {% endblock %}
 

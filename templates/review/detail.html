@@ -65,11 +65,20 @@
                         <a href="{% url 'review_list' %}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left"></i> 목록으로
                         </a>
-                        {% if request.session.user.user_num == review.user_num %}
+                        {% if current_user_num == review.user_num %}
                             <div>
-                                <a href="{% url 'animal_detail' review.desertionno %}" class="btn btn-outline-primary">
-                                    입양된 동물 보기
+                                <a href="{% url 'review_edit' review.review_id %}" class="btn btn-warning me-2">
+                                    <i class="bi bi-pencil"></i> 수정
                                 </a>
+                                <form action="{% url 'review_delete' review.review_id %}" method="post" class="d-inline" onsubmit="return confirm('정말로 이 후기를 삭제하시겠습니까?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash"></i> 삭제
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <div>
                             </div>
                         {% endif %}
                     </div>

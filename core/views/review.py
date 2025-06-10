@@ -109,7 +109,19 @@ def review_create(request, desertion_no):
             messages.error(request, '입양이 완료된 동물에 대해서만 후기를 작성할 수 있습니다.')
             return redirect('adoption_list')
         
+        # 이미 후기를 작성했는지 확인
+        cursor.execute("""
+            SELECT review_id, rating, comment, image_url, created_at
+            FROM review
+            WHERE user_num = %s AND desertionno = %s
+        """, [user_num, desertion_no])
+        existing_review = dictfetchone(cursor)
+        
         if request.method == 'POST':
+            if existing_review:
+                messages.error(request, '이미 후기를 작성하셨습니다.')
+                return redirect('review_list')
+            
             rating = request.POST.get('rating')
             comment = request.POST.get('comment')
             image_url = request.POST.get('image_url', '')  # 선택적 필드
@@ -117,18 +129,6 @@ def review_create(request, desertion_no):
             if not rating or not comment:
                 messages.error(request, '별점과 후기 내용을 모두 입력해주세요.')
                 return redirect('review_create', desertion_no=desertion_no)
-            
-            # 이미 후기를 작성했는지 확인
-            cursor.execute("""
-                SELECT review_id
-                FROM review
-                WHERE user_num = %s AND desertionno = %s
-            """, [user_num, desertion_no])
-            existing_review = cursor.fetchone()
-            
-            if existing_review:
-                messages.error(request, '이미 후기를 작성하셨습니다.')
-                return redirect('review_list')
             
             # 후기 등록
             cursor.execute("""
@@ -162,7 +162,10 @@ def review_create(request, desertion_no):
             messages.error(request, '존재하지 않는 동물입니다.')
             return redirect('animal_list')
         
-        return render(request, 'review/create.html', {'animal': animal})
+        return render(request, 'review/create.html', {
+            'animal': animal,
+            'existing_review': existing_review
+        })
 
 def review_detail(request, review_id):
     with connection.cursor() as cursor:
@@ -188,7 +191,13 @@ def review_detail(request, review_id):
         messages.error(request, '존재하지 않는 후기입니다.')
         return redirect('review_list')
     
-    return render(request, 'review/detail.html', {'review': review})
+    # 현재 로그인한 사용자 정보 추가
+    current_user_num = request.session.get('user', {}).get('user_num')
+
+    return render(request, 'review/detail.html', {
+        'review': review,
+        'current_user_num': current_user_num
+    })
 
 def dictfetchall(cursor):
     """Return all rows from a cursor as a dict"""
@@ -204,4 +213,85 @@ def dictfetchone(cursor):
     if row is None:
         return None
     columns = [col[0].lower() for col in cursor.description]
-    return dict(zip(columns, row)) 
+    return dict(zip(columns, row))
+
+def review_edit(request, review_id):
+    # 세션 기반 로그인 체크
+    if not request.session.get('user'):
+        messages.error(request, '로그인이 필요한 서비스입니다.')
+        return redirect('login')
+
+    user_num = request.session['user']['user_num']
+
+    with connection.cursor() as cursor:
+        # 기존 후기 정보 조회
+        cursor.execute("""
+            SELECT r.*, u.name as user_name, a.kindnm, a.popfile1, a.desertionno
+            FROM review r
+            JOIN users u ON r.user_num = u.user_num
+            JOIN animal a ON r.desertionno = a.desertionno
+            WHERE r.review_id = %s
+        """, [review_id])
+        review = dictfetchone(cursor)
+
+        if not review:
+            messages.error(request, '존재하지 않는 후기입니다.')
+            return redirect('review_list')
+
+        # 현재 로그인한 사용자가 후기 작성자인지 확인
+        if review['user_num'] != user_num:
+            messages.error(request, '후기를 수정할 권한이 없습니다.')
+            return redirect('review_detail', review_id=review_id)
+
+        if request.method == 'POST':
+            rating = request.POST.get('rating')
+            comment = request.POST.get('comment')
+            image_url = request.POST.get('image_url', '')
+
+            if not rating or not comment:
+                messages.error(request, '별점과 후기 내용을 모두 입력해주세요.')
+                return redirect('review_edit', review_id=review_id)
+
+            # 후기 업데이트
+            cursor.execute("""
+                UPDATE review
+                SET rating = %s, comment = %s, image_url = %s
+                WHERE review_id = %s
+            """, [rating, comment, image_url, review_id])
+
+            messages.success(request, '후기가 성공적으로 수정되었습니다.')
+            return redirect('review_detail', review_id=review_id)
+        
+        return render(request, 'review/edit.html', {'review': review})
+
+def review_delete(request, review_id):
+    # 세션 기반 로그인 체크
+    if not request.session.get('user'):
+        messages.error(request, '로그인이 필요한 서비스입니다.')
+        return redirect('login')
+
+    user_num = request.session['user']['user_num']
+
+    with connection.cursor() as cursor:
+        # 기존 후기 정보 조회
+        cursor.execute("""
+            SELECT user_num FROM review WHERE review_id = %s
+        """, [review_id])
+        review = dictfetchone(cursor)
+
+        if not review:
+            messages.error(request, '존재하지 않는 후기입니다.')
+            return redirect('review_list')
+
+        # 현재 로그인한 사용자가 후기 작성자인지 확인
+        if review['user_num'] != user_num:
+            messages.error(request, '후기를 삭제할 권한이 없습니다.')
+            return redirect('review_detail', review_id=review_id)
+
+        if request.method == 'POST':
+            cursor.execute("DELETE FROM review WHERE review_id = %s", [review_id])
+            messages.success(request, '후기가 성공적으로 삭제되었습니다.')
+            return redirect('review_list')
+        
+        messages.error(request, '잘못된 접근입니다.')
+        return redirect('review_detail', review_id=review_id) 
