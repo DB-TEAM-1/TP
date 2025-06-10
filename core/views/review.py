@@ -21,7 +21,7 @@ def review_list(request):
             params.append(request.GET['shelter'])
         
         if request.GET.get('animal'):
-            query += " AND kindcd = %s"
+            query += " AND kindnm = %s"
             params.append(request.GET['animal'])
         
         if request.GET.get('rating'):

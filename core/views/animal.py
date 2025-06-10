@@ -118,11 +118,11 @@ def animal_detail(request, desertion_no):
         # 동물 정보 조회
         cursor.execute("""
             SELECT a.desertionno, a.kindcd, a.kindnm, a.sexcd, a.age,
-                   a.location, a.popfile1, a.processstate, a.date,
-                   a.neuteryn, a.weight, a.specialmark,
-                   s.carenm, s.careaddr, s.caretel, s.careregno,
-                   s.weekoprstime, s.weekopretime,
-                   s.weekendoprstime, s.weekendopretime
+                    a.location, a.popfile1, a.processstate, a.date,
+                    a.neuteryn, a.weight, a.specialmark,
+                    s.carenm, s.careaddr, s.caretel, s.careregno,
+                    s.weekoprstime, s.weekopretime,
+                    s.weekendoprstime, s.weekendopretime
             FROM animal a
             JOIN shelter s ON a.careregno = s.careregno
             WHERE a.desertionno = %s
