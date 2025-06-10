@@ -142,10 +142,14 @@ def animal_detail(request, desertion_no):
         """, [desertion_no])
         reviews = dictfetchall(cursor)
     
+    # 현재 URL 쿼리 파라미터 확인
+    is_from_adoption_list = request.GET.get('from') == 'adoption'
+    
     context = {
         'animal': result,
         'shelter': result,  # 보호소 정보도 포함되어 있음
-        'reviews': reviews
+        'reviews': reviews,
+        'is_from_adoption_list': is_from_adoption_list  # 입양 신청 현황에서 접근했는지 여부
     }
     
     return render(request, 'animal/detail.html', context)

@@ -86,7 +86,7 @@
 
         {% if animal.processstate == '보호중' %}
             <div class="mt-4">
-                {% if request.session.user %}
+                {% if request.session.user and not is_from_adoption_list %}
                     {% if animal.desertionno %}
                         <form method="post" action="{% url 'adoption_apply' animal.desertionno %}" onsubmit="return confirmAdoption()">
                             {% csrf_token %}
@@ -103,7 +103,7 @@
                             }
                         </script>
                     {% endif %}
-                {% else %}
+                {% elif not request.session.user %}
                     <div class="alert alert-info">
                         입양 신청을 하려면 <a href="{% url 'login' %}">로그인</a>이 필요합니다.
                     </div>

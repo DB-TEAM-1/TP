@@ -74,6 +74,24 @@
         </div>
     </nav>
     <main class="container mt-4">        
+        {% if messages %}
+          <div class="d-flex flex-column align-items-center mt-3">
+            {% for message in messages %}
+              {% if message|stringformat:"s" == "이미 입양 신청한 동물입니다." %}
+                <div class="shadow rounded-pill px-4 py-3 d-flex align-items-center"
+                     style="max-width: 500px; font-size: 1.1rem; background-color: #ffeaea; border: 2px solid #ff6b6b; color: #b30000;">
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% else %}
+                <div class="alert alert-{{ message.tags }} shadow rounded-pill px-4 py-3 d-flex align-items-center"
+                     style="max-width: 500px; font-size: 1.1rem;">
+                  <span>{{ message }}</span>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
         {% if request.resolver_match.url_name != 'home' %}
             <button onclick="history.back()" class="btn btn-outline-secondary mb-3">
                 <i class="bi bi-arrow-left"></i> 뒤로 가기

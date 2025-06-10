@@ -57,7 +57,7 @@
                                 <small class="text-muted">
                                     신청일: {{ adoption.applied_at|date:"Y년 m월 d일 H:i" }}
                                 </small>
-                                <a href="{% url 'animal_detail' adoption.desertionno %}" 
+                                <a href="{% url 'animal_detail' adoption.desertionno %}?from=adoption" 
                                    class="btn btn-outline-primary btn-sm">
                                     상세정보 보기
                                 </a>
