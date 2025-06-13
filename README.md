@@ -6,7 +6,7 @@ TEAM 데이터노베이스 - 소프트웨어학과 이호영, 소프트웨어학
 
 1. Python 가상환경 생성 및 활성화
 ```bash
-# DB-TEAM 폴더(프로젝트 루트 디렉토리)에서:
+# TP 폴더 위치에서:
 python -m venv venv
 
 # 가상환경 활성화
@@ -18,9 +18,6 @@ source venv/bin/activate
 
 2. 필요한 패키지 설치
 ```bash
-# TP 폴더로 이동
-cd TP
-
 # 패키지 설치
 pip install -r requirements.txt
 ```
@@ -43,4 +40,3 @@ python manage.py runserver
 - 가상환경을 활성화한 상태에서 위의 명령어들을 실행해야 합니다.
 - requirements.txt는 TP 폴더 안에 있습니다.
 - 프로그램 실행은 TP 폴더 안에서 실행해야 합니다.
-- 가상환경(venv)은 프로젝트 루트 디렉토리(DB-TEAM)에 생성하는 것을 권장합니다.
